@@ -19,6 +19,7 @@
                        or
                        cond when unless
                        map ormap andmap assoc member)
+           (rename mzscheme mz:cons cons)
            ;(lib "list.ss")
            (lib "contract.ss"))
   
@@ -169,7 +170,7 @@
                   (if (< i n)
                       (loop (add1 i)
                             (cdr args)
-                            (cons
+                            (mz:cons
                              (let ([arg (car args)])
                                (proc->signal
                                 (lambda ()
