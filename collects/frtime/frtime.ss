@@ -37,12 +37,14 @@
        (let ([temp test])
          (if temp
              (result temp)
+             (cond clause1 clause2 ...)
              (cond clause1 clause2 ...)))]
       [(_ [test]) test]
       [(_ [test] clause1 clause2 ...)
        (let ((temp test))
          (if temp
              temp
+             (cond clause1 clause2 ...)
              (cond clause1 clause2 ...)))]
       [(_ [test result1 result2 ...])
        (if test (begin result1 result2 ...))]
@@ -50,6 +52,7 @@
           clause1 clause2 ...)
        (if test
            (begin result1 result2 ...)
+           (cond clause1 clause2 ...)
            (cond clause1 clause2 ...))]))
   
   (define-syntax and
@@ -67,7 +70,18 @@
       [(_ exp exps ...) (let ([v exp])
                           (if v
                               v
-                              (or exps ...)))]))
+                              (or exps ...)
+                              (or-undef exps ...)))]))
+
+  (define-syntax or-undef
+    (syntax-rules ()
+      [(_) undefined]
+      [(_ exp) (let ([v exp]) (if v v undefined))]
+      [(_ exp exps ...) (let ([v exp])
+                          (if v
+                              v
+                              (or-undef exps ...)
+                              (or-undef exps ...)))]))
 
   (define-syntax when
     (syntax-rules ()
@@ -194,6 +208,9 @@
       (or (undefined? v)
           (pred v))))
 
+  (define (lift-strict . args)
+    (apply lift #t args))
+  
   ;; Imported from mzscheme:
   (provide (lifted + - * / = eq? equal? eqv? < > <= >= list? add1 cos sin tan symbol->string symbol?
                    number->string exp expt even? odd? list-ref string-append eval
@@ -210,7 +227,7 @@
                    char-locale-whitespace? char-locale-numeric? char-locale-alphabetic? floor angle round
                    ceiling real? date-hour vector-ref procedure? procedure-arity
                    rationalize date-year-day date-week-day date? date-dst? date-year date-month date-day
-                   date-minute date-second make-date char-downcase char>=? char<=? char->integer boolean?
+                   date-minute date-second make-date char-downcase char>=? char<=? char->integer integer->char boolean?
                    integer? quotient remainder positive? negative? inexact->exact exact->inexact
                    make-polar denominator truncate bitwise-not bitwise-xor bitwise-and bitwise-ior inexact?
                    char-whitespace? assq assv memq memv list-tail reverse append length seconds->date
@@ -280,6 +297,7 @@
            null?
            car
            cdr
+           signal-value
            signal?
            behavior?
            event?
@@ -296,9 +314,9 @@
 
   ;; Defined in this module:
   (provide when unless behaviorof -=> nothing nothing?
-           cond and or andmap ormap map
+           cond and or andmap ormap map lift-strict never-e
            caar cadr cdar cddr caddr cdddr cadddr cddddr
-           magic)
+           magic value-nowable?)
 
   ; returns true on values that can be passed to value-now
   ; (e.g. behaviors or constants)
@@ -329,6 +347,8 @@
 
    [when-e (value-nowable? . -> . event?)]
 
+   [while-e (value-nowable? value-nowable? . -> . event?)]
+
    [==> (event? (any? . -> . any) . -> . event?)]
 
    [=#> (event? (any? . -> . any) . -> . event?)]
@@ -357,9 +377,9 @@
 
    [hold ((event?) (value-nowable?) . opt-> . behavior?)]
 
-   [new-cell (() (value-nowable?) . opt-> . behavior?)]
+   [new-cell (() (any?) . opt-> . (union behavior? event?))]
 
-   [set-cell! (behavior? value-nowable? . -> . void?)]
+   [set-cell! ((union behavior? event?) any? . -> . void?)]
 
    [snapshot-e ((event?) any? . ->* . (event?))]
 

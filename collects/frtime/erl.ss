@@ -28,8 +28,8 @@
     (set-cdr! c (unbox free-cons-cells))
     (set-box! free-cons-cells c))
 
-  
-#|  (define mcons cons)
+#|  
+  (define mcons cons)
   (define release void)
 |#
   
