@@ -44,7 +44,7 @@
   |#
 
   (define legal-formats
-    (list 'american 'chinese 'german 'indian 'irish 'julian 'iso-8601))
+    (list 'american 'chinese 'german 'indian 'irish 'julian 'iso-8601 'rfc822))
 
   (define date-display-format 
     (make-parameter 'american
@@ -142,6 +142,17 @@
 		 (values
 		  (list year "-" (add-zero (date-month date)) "-" (add-zero (date-day date)))
 		  (list " " hour24 ":" minute ":" second))]
+		[(rfc822)
+		 (values
+		  (list (substring week-day 0 3) ", " day " " (substring month 0 3) " " year)
+		  (list* " " hour24 ":" minute ":" second " "
+			 (let* ([delta (date-time-zone-offset date)]
+				[hours (quotient delta 3600)]
+				[minutes (modulo (quotient delta 60) 60)])
+			   (list
+			    (if (negative? delta) "-" "")
+			    (add-zero (abs hours))
+			    (add-zero minutes)))))]
 		[else (error 'date->string "unknown date-display-format: ~s"
 			     (date-display-format))])])
 	  (apply string-append (if time?
