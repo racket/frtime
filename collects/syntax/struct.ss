@@ -33,7 +33,8 @@
 		     (loop (cdr l))))))))))
 
   (define build-struct-generation
-    (lambda (name-stx fields omit-sel? omit-set?)
+    (opt-lambda (name-stx fields omit-sel? omit-set? [super-type #f] [prop-value-list null]
+                          [immutable-positions null])
       (let ([names (build-struct-names name-stx fields omit-sel? omit-set?)])
 	(let ([name name-stx]
 	      [num-fields (length fields)]
@@ -57,7 +58,7 @@
 					   (mk-one #f))
 				       (loop (cdr l) (add1 n))))))])
 	  `(let-values ([(struct: make- ? acc mut)
-			 (make-struct-type ',name #f ,num-fields 0 #f null #f)])
+			 (make-struct-type ',name ,super-type ,num-fields 0 #f ,prop-value-list #f #f ,immutable-positions)])
 	     (values struct:
 		     make-
 		     ?
