@@ -39,40 +39,50 @@
 
   (define build-struct-generation
     (opt-lambda (name-stx fields omit-sel? omit-set? [super-type #f] [prop-value-list null]
-                          [immutable-positions null])
+                          [immutable-positions null] [mk-rec-prop-list (lambda (struct: make- ? acc mut) null)])
       (let ([names (build-struct-names name-stx fields omit-sel? omit-set?)])
-	(let ([name name-stx]
-	      [num-fields (length fields)]
-	      [acc/mut-makers (let loop ([l fields][n 0])
-				(if (null? l)
-				    null
-				    (let ([mk-one
-					   (lambda (acc?)
-					     (list
-					      `(,(if acc?
-						     'make-struct-field-accessor
-						     'make-struct-field-mutator)
-						,(if acc? 'acc 'mut)
-						,n ',(car l))))])
-				      (append
-				       (if omit-sel?
-					   null
-					   (mk-one #t))
-				       (if omit-set?
-					   null
-					   (mk-one #f))
-				       (loop (cdr l) (add1 n))))))])
-	  `(let-values ([(struct: make- ? acc mut)
-			 (make-struct-type ',name ,super-type ,num-fields 0 #f ,prop-value-list #f #f ,immutable-positions)])
-	     (values struct:
-		     make-
-		     ?
-		     ,@acc/mut-makers))))))
+	(build-struct-generation* names name-stx fields omit-sel? omit-set? super-type prop-value-list
+				  immutable-positions mk-rec-prop-list))))
+
+  (define build-struct-generation*
+    (opt-lambda (names name fields omit-sel? omit-set? [super-type #f] [prop-value-list null]
+		       [immutable-positions null] [mk-rec-prop-list (lambda (struct: make- ? acc mut) null)])
+      (let ([num-fields (length fields)]
+	    [acc/mut-makers (let loop ([l fields][n 0])
+			      (if (null? l)
+				  null
+				  (let ([mk-one
+					 (lambda (acc?)
+					   (list
+					    `(,(if acc?
+						   'make-struct-field-accessor
+						   'make-struct-field-mutator)
+					      ,(if acc? 'acc 'mut)
+					      ,n ',(car l))))])
+				    (append
+				     (if omit-sel?
+					 null
+					 (mk-one #t))
+				     (if omit-set?
+					 null
+					 (mk-one #f))
+				     (loop (cdr l) (add1 n))))))]
+	    [extra-props (mk-rec-prop-list 'struct: 'make- '? 'acc 'mut)])
+	`(let-values ([(struct: make- ? acc mut)
+		       (make-struct-type ',name ,super-type ,num-fields 0 #f ,prop-value-list #f #f ,immutable-positions)])
+	   (values struct:
+		   make-
+		   ?
+		   ,@acc/mut-makers)))))
 
   (define build-struct-expand-info
     (lambda (name-stx fields omit-sel? omit-set? base-name base-getters base-setters)
-      (let* ([names (build-struct-names name-stx fields omit-sel? omit-set?)]
-	     [flds (cdddr names)]
+      (let* ([names (build-struct-names name-stx fields omit-sel? omit-set?)])
+	(build-struct-expand-info* names name-stx fields omit-sel? omit-set? base-name base-getters base-setters))))
+
+  (define build-struct-expand-info*
+    (lambda (names name-stx fields omit-sel? omit-set? base-name base-getters base-setters)
+      (let* ([flds (cdddr names)]
 	     [every-other (lambda (l)
 			    (let loop ([l l])
 			      (cond
@@ -148,7 +158,7 @@
     ;; if `defined-names' is #f.
     ;; If `expr?' is #t, then generate an expression to build the info,
     ;; otherwise build the info directly.
-    (let ([qs (if gen-expr? (lambda (x) #`(quote-syntax #,x)) values)]
+    (let ([qs (if gen-expr? (lambda (x) #`((syntax-local-certifier) (quote-syntax #,x))) values)]
 	  [every-other (lambda (l)
 			 (let loop ([l l][r null])
 			   (cond
@@ -157,25 +167,24 @@
 			    [else (loop (cddr l) (cons (car l) r))])))]
 	  [super-info (and super-id 
 			   (syntax-local-value super-id (lambda () #f)))])
-      (if super-id 
-	  ;; Did we get valid super-info ?
-	  (if (or (not (struct-declaration-info? super-info))
+      (when super-id 
+	;; Did we get valid super-info ?
+	(when (or (not (struct-declaration-info? super-info))
 		  (not (struct-info-type-id super-info)))
-	      (raise-syntax-error
-	       #f
-	       (if (struct-declaration-info? super-info)
-		   "parent struct information does not include a type for subtyping"
-		   (format "parent struct type not defined~a"
-			   (if super-info
-			       (format " (~a does not name struct type information)"
-				       (syntax-e super-id))
-			       "")))
-	       orig-stx
-	       super-id)))
+	  (raise-syntax-error
+	   #f
+	   (if (struct-declaration-info? super-info)
+	       "parent struct information does not include a type for subtyping"
+	       (format "parent struct type not defined~a"
+		       (if super-info
+			   (format " (~a does not name struct type information)"
+				   (syntax-e super-id))
+			   "")))
+	   orig-stx
+	   super-id)))
+      ;; Generate the results:
       (values
-       (if super-info
-	   (struct-info-type-id super-info)
-	   #f)
+       super-info
        (if defined-names
 	   (let-values ([(initial-gets initial-sets)
 			 (if super-info
@@ -205,9 +214,9 @@
 				  #t))))
 	   #f))))
 
-  (define (make-core make-make-struct-type name super-id/struct: field-names)
+  (define (make-core make-make-struct-type orig-stx defined-names super-info name field-names)
     #`(let-values ([(type maker pred access mutate)
-		    #,(make-make-struct-type name super-id/struct: field-names)])
+		    #,(make-make-struct-type orig-stx name defined-names super-info)])
 	(values type maker pred
 		#,@(let loop ([field-names field-names][n 0])
 		     (if (null? field-names)
@@ -224,26 +233,30 @@
     (let ([defined-names (build-struct-names name field-names #f #f name)]
 	  [delay? (and (not (memq context '(module top-level expression)))
 		       super-id)])
-      (let-values ([(super-id/struct: stx-info) (if delay?
-						    (values #f #f)
-						    (get-stx-info orig-stx super-id defined-names #t))])
+      (let-values ([(super-info stx-info) 
+		    (if delay?
+			(values #f #f)
+			(get-stx-info orig-stx super-id defined-names #t))])
 	(let ([result
 	       #`(begin
 		   (define-values
 		     #,defined-names
 		     #,(if delay?
 			   #`(begin0 ;; the `begin0' guarantees that it's an expression
-			      (#,continue-macro-id #,orig-stx #,name #,super-id #,field-names #,continue-data))
-			   (make-core make-make-struct-type name super-id/struct: field-names)))
+			      (#,continue-macro-id #,orig-stx #,name #,super-id 
+						   #,defined-names #,field-names 
+						   #,continue-data))
+			   (make-core make-make-struct-type orig-stx defined-names super-info name field-names)))
 		   (define-syntaxes (#,name)
 		     #,(if delay?
-			   #`(let-values ([(super-id/struct: stx-info) 
+			   #`(let-values ([(super-info stx-info) 
 					   (get-stx-info (quote-syntax ,orig-stx)
 							 (quote-syntax ,super-id)
 							 (list #,@(map (lambda (x) 
 									 #`(quote-syntax #,x))
 								       defined-names))
-							 #f)])
+							 #f
+							 values)])
 			       stx-info)
 			   stx-info)))])
 	  (if super-id
@@ -254,11 +267,13 @@
 
   (define (generate-delayed-struct-declaration stx make-make-make-struct-type)
     (syntax-case stx ()
-      [(_ orig-stx name super-id field-names continue-data)
-       (let-values ([(super-id/struct: stx-info) (get-stx-info #'orig-stx #'super-id #f #f)])
+      [(_ orig-stx name super-id defined-names field-names continue-data)
+       (let-values ([(super-info stx-info) (get-stx-info #'orig-stx #'super-id #f #f)])
 	 (make-core (make-make-make-struct-type #'continue-data)
+		    #'orig-stx
+		    (syntax->list #'defined-names)
+		    super-info
 		    #'name
-		    #'super-id/struct:
 		    (syntax->list #'field-names)))])))
 
 
