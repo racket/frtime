@@ -1,11 +1,16 @@
 
 (module struct mzscheme
-  (require (lib "etc.ss"))
+  (require (lib "etc.ss")
+	   "stx.ss")
+  (require-for-template mzscheme)
   
   (provide build-struct-names
 	   build-struct-generation
 	   build-struct-expand-info
-	   struct-declaration-info?)
+	   struct-declaration-info?
+
+	   generate-struct-declaration
+	   generate-delayed-struct-declaration)
 
   ;; build-struct-names : id (list-of id) bool bool -> (list-of id)
   (define build-struct-names
@@ -120,6 +125,134 @@
 	 (identifier/#f? (caddr x))
 	 (id/#f-list? (list-ref x 3))
 	 (id/#f-list? (list-ref x 4))
-	 (or (eq? #t (list-ref x 5)) (identifier/#f? (list-ref x 5))))))
+	 (or (eq? #t (list-ref x 5)) (identifier/#f? (list-ref x 5)))))
+
+
+  ;; ----------------------------------------
+
+  (define struct-info-type-id car)
+  (define struct-info-constructor-id cadr)
+  (define struct-info-predicate-id caddr)
+  (define struct-info-accessor-ids cadddr)
+  (define struct-info-mutator-ids (lambda (x) (list-ref x 4)))
+
+  (define (get-stx-info orig-stx super-id defined-names gen-expr?)
+    ;; Looks up super info, if needed, and builds compile-time info for the
+    ;; new struct; called by all three forms, but does only half the work
+    ;; if `defined-names' is #f.
+    ;; If `expr?' is #t, then generate an expression to build the info,
+    ;; otherwise build the info directly.
+    (let ([qs (if gen-expr? (lambda (x) #`(quote-syntax #,x)) values)]
+	  [every-other (lambda (l)
+			 (let loop ([l l][r null])
+			   (cond
+			    [(null? l) r]
+			    [(null? (cdr l)) (cons (car l) r)]
+			    [else (loop (cddr l) (cons (car l) r))])))]
+	  [super-info (and super-id 
+			   (syntax-local-value super-id (lambda () #f)))])
+      (if super-id 
+	  ;; Did we get valid super-info ?
+	  (if (or (not (struct-declaration-info? super-info))
+		  (not (struct-info-type-id super-info)))
+	      (raise-syntax-error
+	       #f
+	       (if (struct-declaration-info? super-info)
+		   "parent struct information does not include a type for subtyping"
+		   (format "parent struct type not defined~a"
+			   (if super-info
+			       (format " (~a does not name struct type information)"
+				       (syntax-e super-id))
+			       "")))
+	       orig-stx
+	       super-id)))
+      (values
+       (if super-info
+	   (struct-info-type-id super-info)
+	   #f)
+       (if defined-names
+	   (let-values ([(initial-gets initial-sets)
+			 (if super-info
+			     (values (map qs (struct-info-accessor-ids super-info))
+				     (map qs (struct-info-mutator-ids super-info)))
+			     (values null null))]
+			[(fields) (cdddr defined-names)]
+			[(wrap) (if gen-expr? (lambda (x) #`(list-immutable #,@x)) values)])
+	     (wrap
+	      (list-immutable (qs (car defined-names))
+			      (qs (cadr defined-names))
+			      (qs (caddr defined-names))
+			      (wrap
+			       (apply
+				list-immutable
+				(append (map qs (every-other fields)) 
+					initial-gets)))
+			      (wrap
+			       (apply
+				list-immutable
+				(append (map qs (if (null? fields) 
+						    null 
+						    (every-other (cdr fields)))) 
+					initial-sets)))
+			      (if super-id
+				  (qs super-id)
+				  #t))))
+	   #f))))
+
+  (define (make-core make-make-struct-type name super-id/struct: field-names)
+    #`(let-values ([(type maker pred access mutate)
+		    #,(make-make-struct-type name super-id/struct: field-names)])
+	(values type maker pred
+		#,@(let loop ([field-names field-names][n 0])
+		     (if (null? field-names)
+			 null
+			 (list* #`(make-struct-field-accessor access #,n '#,(car field-names))
+				#`(make-struct-field-mutator mutate #,n '#,(car field-names))
+				(loop (cdr field-names) (add1 n))))))))
+
+  (define (generate-struct-declaration orig-stx
+				       name super-id field-names 
+				       context 
+				       make-make-struct-type
+				       continue-macro-id continue-data)
+    (let ([defined-names (build-struct-names name field-names #f #f name)]
+	  [delay? (and (not (memq context '(module top-level expression)))
+		       super-id)])
+      (let-values ([(super-id/struct: stx-info) (if delay?
+						    (values #f #f)
+						    (get-stx-info orig-stx super-id defined-names #t))])
+	(let ([result
+	       #`(begin
+		   (define-values
+		     #,defined-names
+		     #,(if delay?
+			   #`(begin0 ;; the `begin0' guarantees that it's an expression
+			      (#,continue-macro-id #,orig-stx #,name #,super-id #,field-names #,continue-data))
+			   (make-core make-make-struct-type name super-id/struct: field-names)))
+		   (define-syntaxes (#,name)
+		     #,(if delay?
+			   #`(let-values ([(super-id/struct: stx-info) 
+					   (get-stx-info (quote-syntax ,orig-stx)
+							 (quote-syntax ,super-id)
+							 (list #,@(map (lambda (x) 
+									 #`(quote-syntax #,x))
+								       defined-names))
+							 #f)])
+			       stx-info)
+			   stx-info)))])
+	  (if super-id
+	      (syntax-property result 
+			       'disappeared-use 
+			       (syntax-local-introduce super-id))
+	      result)))))
+
+  (define (generate-delayed-struct-declaration stx make-make-make-struct-type)
+    (syntax-case stx ()
+      [(_ orig-stx name super-id field-names continue-data)
+       (let-values ([(super-id/struct: stx-info) (get-stx-info #'orig-stx #'super-id #f #f)])
+	 (make-core (make-make-make-struct-type #'continue-data)
+		    #'name
+		    #'super-id/struct:
+		    (syntax->list #'field-names)))])))
 
 
