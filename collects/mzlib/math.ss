@@ -19,10 +19,15 @@
   ;; sgn function 
   (define sgn
     (lambda (x)
-      (cond
-       ((< x 0) -1)
-       ((> x 0)  1)
-       (else 0))))
+      (if (exact? x)
+	  (cond
+	   ((< x 0) -1)
+	   ((> x 0)  1)
+	   (else 0))
+	  (cond
+	   ((< x 0.0) -1.0)
+	   ((> x 0.0)  1.0)
+	   (else 0.0)))))
   
   ;; complex conjugate
   (define conjugate
