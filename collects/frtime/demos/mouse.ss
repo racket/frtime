@@ -1,4 +1,4 @@
-(module demo0 (lib "frtime.ss" "frtime")
+(module mouse (lib "frtime.ss" "frtime")
   (require (lib "animation.ss" "frtime"))
   
   (display-shapes

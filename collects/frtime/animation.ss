@@ -6,9 +6,7 @@
            (lib "class.ss")
            (lib "list.ss" "frtime")
            (lib "etc.ss" "frtime")
-           (lifted (lib "math.ss") sqr)
-           (as-is:unchecked (lib "math.ss") pi)
-           (as-is mzscheme sleep))
+           (lib "math.ss" "frtime"))
   
   (open-graphics)
   

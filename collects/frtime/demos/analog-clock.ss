@@ -8,7 +8,7 @@
 ;; Require the animation library, the gui library, and the library
 ;; containing the build-list function.
 (require (lib "animation.ss" "frtime")
-         (lib "gui.scm" "frtime")
+         (lib "gui.ss" "frtime")
          (lib "etc.ss" "frtime")
          (rename (lib "math.ss") pi pi))
 

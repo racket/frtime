@@ -1,28 +1,28 @@
-(module demo3 (lib "frtime.ss" "frtime")
+(module rotation (lib "frtime.ss" "frtime")
   
   (require
    (lib "animation.ss" "frtime")
-   (lib "gui.scm" "frtime"))
+   (lib "gui.ss" "frtime"))
   
   (define z (new-cell 1))
   
   (define shapes
     (let* ([radius (make-slider "Radius" 50 150 100)]
-           [speed (* .01 (make-slider "Speed" 25 75 50))]
+           [speed (* .01 (make-slider "Speed" -75 75 50))]
            [phase (wave speed)]
            [ring1 (make-check-box "Show x-y ring")]
            [center (make-check-box "Show center of x-y ring")]
            [ring2 (make-check-box "Show pt-center ring")]
            [cvt (lambda (z) (+ 200 (* radius z)))]
-           [throw? (make-check-box "Throw exceptions?" #t)]
+           ;[throw? (make-check-box "Throw exceptions?" #t)]
            [x (cos phase)]
            [y (sin phase)]
            [green (+ .75 (* .25 x))]
            [blue (+ .75 (* .25 y))])
-      (set-cell! raise-exceptions throw?)
+      ;(set-cell! raise-exceptions throw?)
       (list
        (when ring2 (make-ring (make-posn (cvt (/ x 4)) (cvt (/ y 4))) (* radius .75) "gray"))
-       (when center (make-circle (make-posn (cvt (- (/ x 2))) (cvt (- (/ y 2) (/ 1 z)))) (/ radius 12) "gray"))
+       (when center (make-circle (make-posn (cvt (- (/ x 2))) (cvt (- (/ y 2)))) (/ radius 12) "gray"))
        (when ring1 (make-ring (make-posn (cvt (- (/ x 2))) (cvt (- (/ y 2)))) (/ radius 2) "gray"))
        (make-ring (make-posn 200 200) radius "gray")
        (make-line (make-posn (cvt -1.2) 200) (make-posn (cvt 1.2) 200) "gray")

@@ -14,16 +14,35 @@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
 
-      (define language-base%
+      (define basic-frtime-language%
 	(class* object% (drscheme:language:simple-module-based-language<%>)
 	  (define/public (get-language-numbers)
-	    '(1000 -400))
+	    '(1000 -400 0))
 	  (define/public (get-language-position)
-	    (list (string-constant experimental-languages) "FrTime"))
+	    (list (string-constant experimental-languages) "FrTime" "Basic FrTime"))
 	  (define/public (get-module)
 	    '(lib "frtime.ss" "frtime"))
 	  (define/public (get-one-line-summary)
-	    "Language for reactive and time-dependent systems")
+	    "Functional language for reactive systems")
+          (define/public (get-language-url) #f)
+	  (define/public (get-reader)
+	    (lambda (name port offsets)
+	      (let ([v (read-syntax name port offsets)])
+		(if (eof-object? v)
+		    v
+		    (namespace-syntax-introduce v)))))
+	  (super-instantiate ())))
+
+      (define big-frtime-language%
+	(class* object% (drscheme:language:simple-module-based-language<%>)
+	  (define/public (get-language-numbers)
+	    '(1000 -400 1))
+	  (define/public (get-language-position)
+	    (list (string-constant experimental-languages) "FrTime" "Big FrTime"))
+	  (define/public (get-module)
+	    '(lib "frtime-big.ss" "frtime"))
+	  (define/public (get-one-line-summary)
+	    "Adds libraries to basic FrTime (list, math, date, etc)")
           (define/public (get-language-url) #f)
 	  (define/public (get-reader)
 	    (lambda (name port offsets)
@@ -53,10 +72,10 @@
          value
          watch-list))
       
-      (define language%
+      (define (make-frtime-language base)
 	(class (drscheme:language:module-based-language->language-mixin
 		(drscheme:language:simple-module-based-language->module-based-language-mixin
-		 language-base%))
+		 base))
           (field (watch-list empty))
 	  (rename [super-on-execute on-execute])
           (define/override (on-execute settings run-in-user-thread)
@@ -88,4 +107,6 @@
       (define (phase1) (void))
       (define (phase2)
 	(drscheme:language-configuration:add-language 
-	 (make-object ((drscheme:language:get-default-mixin) language%)))))))
+	 (make-object ((drscheme:language:get-default-mixin) (make-frtime-language basic-frtime-language%))))
+        (drscheme:language-configuration:add-language 
+	 (make-object ((drscheme:language:get-default-mixin) (make-frtime-language big-frtime-language%))))))))

@@ -216,6 +216,7 @@
                    make-polar denominator truncate bitwise-not bitwise-xor bitwise-and bitwise-ior inexact?
                    char-whitespace? assq assv memq memv list-tail reverse append length seconds->date
                    expand syntax-object->datum exn-message continuation-mark-set->list exn-continuation-marks
+                   not-break-exn?
                    )
            (rename frtime:case case)
            (rename frtime:vector vector)
@@ -224,14 +225,14 @@
            make-namespace namespace? namespace-symbol->identifier namespace-variable-value
            namespace-set-variable-value! namespace-undefine-variable! namespace-mapped-symbols
            parameterize current-seconds current-milliseconds current-inexact-milliseconds
-           call-with-values 
+           call-with-values make-parameter
            null gensym collect-garbage
            error define-struct set! printf fprintf current-error-port for-each void
            procedure-arity-includes? raise-type-error raise thread
            make-exn:application:mismatch current-continuation-marks
            raise-mismatch-error require-for-syntax define-syntax syntax-rules syntax-case
            set-eventspace
-           (lifted:nonstrict apply format list)
+           (lifted:nonstrict apply format list list*)
            lambda
            case-lambda
            define-values
@@ -246,7 +247,12 @@
            unquote
            values
            syntax
-           
+           let/ec
+           with-handlers
+           delay
+           force
+           random
+           sleep
            )
 
   ;; Defined in frp.ss:
@@ -280,6 +286,8 @@
            event-receiver?
            frtime-version
            raise-exceptions
+           synchronize
+           snapshot/apply
            )
            
 
