@@ -8,9 +8,7 @@
 ;; Require the animation library, the gui library, and the library
 ;; containing the build-list function.
 (require (lib "animation.ss" "frtime")
-         (lib "gui.ss" "frtime")
-         (lib "etc.ss" "frtime")
-         (rename (lib "math.ss") pi pi))
+         (lib "gui.ss" "frtime"))
 
 (define clock-radius (make-slider "Clock Size" 40 200 100))
 
@@ -39,7 +37,7 @@
 (define follow-mouse?
   (hold (merge-e
          clicks-in-clock
-         (-=> left-releases false))))
+         (left-releases . -=> . false))))
 
 ;; Define the position of the center and the radius of the clock.
 (define clock-center

@@ -294,4 +294,4 @@
    (all-defined-except pixmap window draw-list l d make-circle make-ring make-solid-ellipse
                        make-rect make-line make-polygon make-graph-string make-wave-state wave-state-hz wave-state-offset)
    (lifted make-circle make-ring make-solid-ellipse make-rect make-line make-polygon make-graph-string)
-   (all-from-except "graphics.ss")))
+   (all-from "graphics.ss")))

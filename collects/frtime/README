@@ -1,26 +1,59 @@
 
-This directory contains the source code for FrTime and the associated
-animation library.  To run the animation/GUI demos, simply open the
-corresponding file, make sure the language level is set to (module
-...), and execute.  See the demo source code for more information.
+This directory contains the source code for FrTime.
 
-Demo 1 (demo1.ss) : A collection of balls that move in circles around
-the mouse pointer.  The up and down arrows increase and decrease the
-number of these balls, while the left and right arrows adjust their
-speed.
+To run the animation/GUI demos, simply open the corresponding file and
+either
+(a) Set the language level to (module ...) and Execute, or
+(b) Set the language level to FrTime, Execute, and type
+> (require <module-name>)
+in the Interactions Window.
 
-Demo 2 (demo2.ss) : Simulation of an engine cylinder.  The left and
-right arrows adjust the speed.
+See the demo source code for more information.
 
-Demo 3 (demo3.ss) : Balls moving in circles.
+orbit-mouse.ss : A collection of balls that move in circles around
+the mouse pointer.
 
-Demo 4 (demo4.ss) : A trail of balls following the mouse.
+piston.ss : Simulation of a piston/cylinder.
 
-Demo 5 (demo5.ss) : A ball chasing the mouse.
+rotation.ss : Balls moving in circles.
 
-Demo 6 (demo6.ss) : A simple pong/air-hockey game.  The left paddle
-moves with the up and down arrow keys; the right paddle moves with the
-mouse.  The 'r' key resets the score.
+delay-mouse.ss : A trail of balls following the mouse.
+
+ball-on-string.ss : A ball chasing the mouse.
+
+pong.ss : A simple pong/air-hockey game.  The left paddle moves with
+numeric keypad; the right paddle moves with the mouse.  The 'r' key
+resets the score.
+
+net-pong-*.ss : A networked version of the pong/air-hockey game.
+Currently known to work under Linux.  To play, open the client on one
+machine and the server on another.  Execute both (and require if
+necessary, depending on language level).  Evaluate (self) on each.
+Results will be something like:
+
+[client]
+> (self)
+#3(tid 128.148.38.2:1180 main)
+
+and
+[server]
+> (self)
+#3(tid 128.148.33.71:1178 main)
+
+Now tell each machine about the other:
+[client]
+> (set-cell! server (make-tid '128.148.33.71 1178 'frtime-heart))
+
+[server]
+> (set-cell! client (make-tid '128.148.38.2 1180 'frtime-heart))
+
+Note the differences between the #3(tid ...) output and the (make-tid ...)
+commands---there is no colon (:) between the host and port, and main becomes
+'frtime-heart.
+
+After setting the cells, complete the connection by clicking the left
+mouse button in both animation windows.  The player running the server
+can reset the score by pressing 'r'.
 
 GUI Demo 1 (gui-demo1.ss) : A simple "pizza ordering" user interface
 based on an HtDP exercise.

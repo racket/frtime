@@ -36,12 +36,13 @@
          [col (remainder num GRID-SIZE)]
          [x (+ (* row grid-resolution) 25)]
          [y (+ (* col grid-resolution) 25)]
-         [d (distance x y (posn-x mouse-pos) (posn-y mouse-pos))])
-    (make-circle (make-posn x y) 
-                 (if (< d (- max-point-size 2))
-                     (- max-point-size d) 
-                     2)
-                 "black")))
+         [d (distance x y (posn-x mouse-pos) (posn-y mouse-pos))]
+         [pt-size (if (< d (- max-point-size 2))
+                      (- max-point-size d)
+                      2)])
+    (make-circle (make-posn x y)
+                 pt-size
+                 (make-rgb (/ pt-size max-point-size) 0 0))))
 
 ;; Define a list of growing points.
 (define growing-points (build-list (sqr GRID-SIZE) create-growing-point))

@@ -214,6 +214,9 @@
           (values (substring str 0 i) (substring str (add1 i)))
           (loop (add1 i)))))
 
+  (define (report-exn exn)
+    (fprintf (current-error-port) "erl.ss: ~a (~a)~n" exn (exn-message exn)))
+  
   ; forwarder for remote communication
   (thread
    (lambda ()
@@ -222,7 +225,7 @@
             [mk-wait-set (lambda () (apply waitables->waitable-set
                                            (hash-table-map in-ports (lambda (key val) key))))]
             [try-connect (lambda (ip:port)
-                           (with-handlers ([exn? (lambda (exn) (printf "~a~n" exn) false)])
+                           (with-handlers ([exn? (lambda (exn) (report-exn exn) false)])
                              (let*-values ([(ip-str port-str) (split-string-at
                                                                (symbol->string ip:port)
                                                                #\:)]
@@ -245,7 +248,7 @@
                   (hash-table-put! in-ports in-p remote-ip:port))
                 (loop (mk-wait-set)))]
              [(input-port? val)
-              (match (with-handlers ([exn? (lambda (exn) (printf "~a~n" exn) eof)])
+              (match (with-handlers ([exn? (lambda (exn) (report-exn exn) eof)])
                        (read val))
                 [(lid msg)
                  ; forward to local mailbox

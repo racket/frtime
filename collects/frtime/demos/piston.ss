@@ -5,7 +5,7 @@
    (lib "gui.ss" "frtime")
    (lib "math.ss" "frtime"))
   
-  (provide (all-defined-except))
+  (provide (all-defined))
   
   (define radius (make-slider "Radius" 30 50 30))
   (define crank (make-slider "Crank length" 150 200 150))
@@ -18,7 +18,7 @@
           [piston-height (make-slider "Piston height" 20 40 20)]
           [piston-width 12]
           [gap (/ cylinder-width 6)]
-          [speed (* .02 (make-slider "Speed" 25 75 25))]
+          [speed (* .02 (make-slider "Speed" -75 75 25))]
           [phase (wave speed)]
           [x1 (* radius (cos phase))]
           [y1 (* radius (sin phase))]

@@ -2,7 +2,7 @@
 ; Simple graphics routines for MrEd
 ; Originally written by Johnathan Franklin
 ;
-; modified by Gregory Cooper to support FRP
+; modified by Gregory Cooper to support FrTime
 
 (module graphics-posn-less-unit mzscheme
   (require (lib "unitsig.ss")

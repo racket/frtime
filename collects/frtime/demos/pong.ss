@@ -6,6 +6,7 @@
    (all-except (lib "match.ss") match))
   
   (define paddle-radius (make-slider "Paddle radius" 10 30 20))
+  (define key-control-speed (* 0.01 (make-slider "Key control speed" 1 50 25)))
   
   (define (neg-x p)
     (make-posn (- (posn-x p)) (posn-y p)))
@@ -26,38 +27,38 @@
                            (clip (+ 100
                                     (integral (hold
                                                (merge-e
-                                                ((snapshot-e key-strokes (posn-x paddle1-pos))
+                                                (key-strokes
                                                  . =#=> .
-                                                 (match-lambda
-                                                   [('release _) 0]
-                                                   [((or 'numpad1 'numpad4 'numpad7) p) (if (> p 30)
-                                                                                            -0.25
-                                                                                            nothing)]
-                                                   [((or 'numpad3 'numpad6 'numpad9) p) (if (< p 170)
-                                                                                            .25
-                                                                                            nothing)]
-                                                   [_ nothing]))
-                                                ((when-e (>= (posn-x paddle1-pos) 170)) . -=> . 0)
-                                                ((when-e (<= (posn-x paddle1-pos)  30)) . -=> . 0))
-                                               0)))
+                                                 (lambda (key)
+                                                   (snapshot (paddle1-pos key-control-speed)
+                                                     (let ([x (posn-x paddle1-pos)])
+                                                       (case key
+                                                         [(release) 0]
+                                                         [(numpad4) (when (> x 30) (- key-control-speed))]
+                                                         [(numpad1 numpad7) (when (> x 30) (- (/ key-control-speed (sqrt 2))))]
+                                                         [(numpad6) (when (< x 170) key-control-speed)]
+                                                         [(numpad3 numpad9) (when (< x 170) (/ key-control-speed (sqrt 2)))])))))
+                                                 ((when-e (>= (posn-x paddle1-pos) 170)) . -=> . 0)
+                                                 ((when-e (<= (posn-x paddle1-pos)  30)) . -=> . 0))
+                                                0)))
                                  30 170)
                            (clip (+ 100
                                     (integral (hold
                                                (merge-e
-                                                ((snapshot-e key-strokes (posn-y paddle1-pos))
+                                                (key-strokes
                                                  . =#=> .
-                                                 (match-lambda
-                                                   [('release _) 0]
-                                                   [((or 'numpad7 'numpad8 'numpad9) p) (if (> p 50)
-                                                                                            -0.25
-                                                                                            nothing)]
-                                                   [((or 'numpad1 'numpad2 'numpad3) p) (if (< p 350)
-                                                                                            .25
-                                                                                            nothing)]
-                                                   [_ nothing]))
-                                                ((when-e (>= (posn-y paddle1-pos) 370)) . -=> . 0)
-                                                ((when-e (<= (posn-y paddle1-pos)  30)) . -=> . 0))
-                                               0)))
+                                                 (lambda (key)
+                                                   (snapshot (paddle1-pos key-control-speed)
+                                                     (let ([y (posn-y paddle1-pos)])
+                                                       (case key
+                                                         [(release) 0]
+                                                         [(numpad8) (when (> y 30) (- key-control-speed))]
+                                                         [(numpad7 numpad9) (when (> y 30) (- (/ key-control-speed (sqrt 2))))]
+                                                         [(numpad2) (when (< y 370) key-control-speed)]
+                                                         [(numpad1 numpad3) (when (< y 370) (/ key-control-speed (sqrt 2)))])))))
+                                                 ((when-e (>= (posn-y paddle1-pos) 370)) . -=> . 0)
+                                                 ((when-e (<= (posn-y paddle1-pos)  30)) . -=> . 0))
+                                                0)))
                                  30 370))]
              [pos1 (switch
                     ((merge-e
