@@ -6,7 +6,7 @@
   
   
   (provide make-heap heap-empty? heap-size heap-insert heap-pop
-	   heap-peak heap-remove heap-find
+	   (rename heap-peak heap-peek) heap-remove heap-find
 	   heap-contains heap-resort heap-tostring)
   
   

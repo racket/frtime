@@ -1,7 +1,8 @@
 (module demo1 (lib "frtime.ss" "frtime")
   
   (require (lib "animation.ss" "frtime")
-           (as-is (lib "math.ss") pi))
+           (as-is (lib "math.ss") pi)
+           (lib "etc.ss" "frtime"))
   
   (define radius 25)
   (define speed (+ .4 (* .2 (range-control (key 'right) (key 'left) 8))))
@@ -21,4 +22,3 @@
          5 "blue")))))
   
   (provide (all-defined-except)))
-  

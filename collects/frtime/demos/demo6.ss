@@ -19,7 +19,6 @@
       (letrec ([paddle1-pos (make-posn
                              (clip (+ 100
                                       (integral (hold
-                                                 0
                                                  (merge-e
                                                   ((snapshot-e key-strokes (posn-x paddle1-pos)) . =#=> .
                                                    (match-lambda
@@ -32,11 +31,11 @@
                                                                                               nothing)]
                                                      [_ nothing]))
                                                   ((when-e (>= (posn-x paddle1-pos) 170)) . -=> . 0)
-                                                  ((when-e (<= (posn-x paddle1-pos) 30)) . -=> . 0)))))
+                                                  ((when-e (<= (posn-x paddle1-pos) 30)) . -=> . 0))
+                                                 0)))
                                    30 170)
                              (clip (+ 100
                                       (integral (hold
-                                                 0
                                                  (merge-e
                                                   ((snapshot-e key-strokes (posn-y paddle1-pos)) . =#=> .
                                                    (match-lambda
@@ -49,7 +48,8 @@
                                                                                               nothing)]
                                                      [_ nothing]))
                                                   ((when-e (>= (posn-y paddle1-pos) 370)) . -=> . 0)
-                                                  ((when-e (<= (posn-y paddle1-pos) 30)) . -=> . 0)))))
+                                                  ((when-e (<= (posn-y paddle1-pos) 30)) . -=> . 0))
+                                                 0)))
                                    30 370))]
                [pos1 (switch
                       (posn+ (make-posn 100 100) (posn-integral vel1))

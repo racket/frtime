@@ -42,8 +42,8 @@
       (super-instantiate ())))
   
   (define (make-control-behavior reactive-control)
-    (hold (send reactive-control extract-value)
-          ((send reactive-control get-event) . ==> . third)))
+    (hold ((send reactive-control get-event) . ==> . third)
+          (send reactive-control extract-value)))
   
   ;(define (get-button-event reactive-button)
   ;  ((send reactive-button get-event) . -=> . #t))
@@ -61,10 +61,10 @@
 ;       (super-instantiate ())))
 ;   
 ;   (define (make-slider-2d-behavior reactive-slider)
-;     (hold (call-with-values
+;     (hold ((send reactive-slider get-event) . ==> . third)
+;           (call-with-values
 ;            (lambda () (send reactive-slider get-values))
-;            cons)
-;           ((send reactive-slider get-event) . ==> . third)))
+;            cons)))
 ;   
 ; 
  
@@ -117,7 +117,7 @@
       (init-field
        (cell (new-cell undefined))
        (updater (proc->signal
-		 (lambda () (send this set-value (get-value cell)))
+		 (lambda () (send this set-value (value-now cell)))
                  cell)))
       
       (super-instantiate ())
@@ -178,9 +178,9 @@
   
   (define (make-message str~)
     (send (instantiate reactive-message% ()
-            (label (if (undefined? (get-value str~))
+            (label (if (undefined? (value-now str~))
                        ""
-                       (get-value str~)))
+                       (value-now str~)))
             (parent frame)
             (stretchable-height #t)
             (stretchable-width #t))
@@ -207,6 +207,9 @@
                              (min-value min) (max-value max) (parent frame)
                              ;(style (list 'plain 'horizontal))
                              )))
+  
+  (define (make-check-box str)
+    (make-control-behavior (instantiate reactive-check-box% () (label str) (parent frame))))
   
   (define fresh-window
     (let ([first #t])

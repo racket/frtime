@@ -1,13 +1,13 @@
 (module animation (lib "frtime.ss" "frtime")
   
   (require (all-except "graphics.ss" make-posn posn-x posn-y make-rgb)
-           (lifted/nonstrict "graphics.ss" make-posn make-rgb)
-           (lifted "graphics.ss" posn-x posn-y)
+           (lifted "graphics.ss" posn-x posn-y make-posn make-rgb)
            (all-except (lib "match.ss") match)
            (lib "list.ss" "frtime")
-           (all-except (lib "etc.ss") rec build-list)
+           (lib "etc.ss" "frtime")
            (lifted (lib "math.ss") sqr)
-           (as-is (lib "math.ss") pi))
+           (as-is (lib "math.ss") pi)
+           (as-is mzscheme sleep))
   
   (open-graphics)
   
@@ -24,18 +24,19 @@
                     (open-pixmap "" x y))
               
               (set! mouse-pos
-                    (hold (query-mouse-posn window)
-                          ((viewport-mouse-events window)
+                    (hold ((viewport-mouse-events window)
                            . ==> . 
                            (lambda (ev) (make-posn
                                          (sixmouse-x ev)
-                                         (sixmouse-y ev))))))
+                                         (sixmouse-y ev))))
+                          (query-mouse-posn window)))
               
               (set! key-strokes ((viewport-key-events window) . ==> . sixkey-value))
               
               (set! left-clicks ((viewport-mouse-events window) . =#> . sixmouse-left?))
               (set! middle-clicks ((viewport-mouse-events window) . =#> . sixmouse-middle?))
-              (set! right-clicks ((viewport-mouse-events window) . =#> . sixmouse-right?)))))))
+              (set! right-clicks ((viewport-mouse-events window) . =#> . sixmouse-right?))))
+        (sleep .2))))
     
   (define window
     (open-viewport "Animation - DrScheme" 400 400))
@@ -44,18 +45,18 @@
     (open-pixmap "" 400 400))
   
   (define mouse-pos
-    (hold (query-mouse-posn window)
-          ((viewport-mouse-events window)
+    (hold ((viewport-mouse-events window)
            . ==> . 
            (lambda (ev) (make-posn
                          (sixmouse-x ev)
-                         (sixmouse-y ev))))))
+                         (sixmouse-y ev))))
+          (query-mouse-posn window)))
   
   (define filtered-keys (viewport-key-events window))
-  (define shift-down (hold #f (filtered-keys . ==> . sixkey-shift)))
-  (define control-down (hold #f (filtered-keys . ==> . sixkey-control)))
-  (define meta-down (hold #f (filtered-keys . ==> . sixkey-meta)))
-  (define alt-down (hold #f (filtered-keys . ==> . sixkey-alt)))
+  (define shift-down (hold (filtered-keys . ==> . sixkey-shift)))
+  (define control-down (hold (filtered-keys . ==> . sixkey-control)))
+  (define meta-down (hold (filtered-keys . ==> . sixkey-meta)))
+  (define alt-down (hold (filtered-keys . ==> . sixkey-alt)))
   (define key-strokes ((viewport-key-events window) . ==> . sixkey-value))
   (define left-clicks ((viewport-mouse-events window) . =#> . sixmouse-left?))
   (define middle-clicks ((viewport-mouse-events window) . =#> . sixmouse-middle?))
@@ -108,6 +109,7 @@
           [else ((draw-solid-rectangle pixmap) (make-posn (+ (posn-x ul) w) (+ (posn-y ul) h)) (- w) (- h) color)])]
        [($ polygon pts offset color) ((draw-solid-polygon pixmap) pts offset color)]
        [(? list? x) (draw-list x)]
+       [(? void?) (void)]
        [(? undefined?) (void)])
      a-los))
   
@@ -137,7 +139,7 @@
   (define (key sym)
     (key-strokes
      . =#> .
-     (lambda (x) (eq? x (cur-val sym)))))
+     (lambda (x) (eq? x (value-now sym)))))
   
   (define (draw vp pm posl)
     ((clear-viewport pm))
@@ -167,14 +169,6 @@
                    i)]))
   |#
   
-  (define (build-list n f)
-    (build-list-help 0 n f))
-
-  (define (build-list-help i n f)
-    (if (>= i n)
-        empty
-        (cons (f i) (build-list-help (add1 i) n f))))
-
   (define (drop n l)
     (if (empty? l)
         empty
@@ -196,11 +190,12 @@
     (let ([fix (lambda (n) (min 1 (max 0 n)))])
       (apply make-rgb (map fix (list r g b)))))
 
-  (define (range-control up down limit)
-    (accum-b
-     (merge-e (up   . -=> . (inc-max limit))
-              (down . -=> . (dec-min 0)))
-     0))
+  (define range-control
+    (opt-lambda (up down limit [init 0])
+      (accum-b
+       (merge-e (up   . -=> . (inc-max limit))
+                (down . -=> . (dec-min 0)))
+       init)))
   
   (define (keyboard-control up down limit)
     (accum-b
@@ -217,7 +212,7 @@
   (define (wave hz)
     (let* ([state (collect-b
                    (snapshot-e (changes hz) time-b)
-                   (make-wave-state (get-value hz) 0)
+                   (make-wave-state (value-now hz) 0)
                    (lambda (new-freq+time old-state)
                      (match new-freq+time
                        [(h1 t)
@@ -230,7 +225,7 @@
          (* time-b pi (lift #f wave-state-hz state) .002))))
   
   (define (current-and-last-value signal)
-    (let ([init (get-value signal)])
+    (let ([init (value-now signal)])
       (collect-b (changes signal)
                  (list init init)
                  (lambda (new-value previous-two)
@@ -240,7 +235,7 @@
     (second (current-and-last-value signal)))
   
 ;   (define (last-value signal)
-;    (let ([init (get-value signal)])
+;    (let ([init (value-now signal)])
 ;      (rest
 ;       (collect-b (changes signal)
 ;                  (cons init init)
@@ -272,6 +267,9 @@
   
   (define (normalize p)
     (posn/ p (posn-len p)))
+  
+  (define (current-mouse-pos)
+    (value-now mouse-pos))
   
   (define (clip x lo hi)
     (if (< x lo)

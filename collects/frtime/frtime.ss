@@ -1,5 +1,5 @@
 (module frtime (lib "frp.ss" "frtime")
-  
+
   (require (all-except mzscheme
                        module
                        #%app
@@ -7,28 +7,20 @@
                        #%datum
                        #%plain-module-begin
                        #%module-begin
-                       lambda
-                       case-lambda
-                       define-values
-                       define
-                       let
-                       letrec
-                       let-values
-                       let*
-                       begin
-                       begin0
-                       quote
-                       quasiquote
-                       unquote
-                       values
                        if
                        require
                        provide
+                       letrec
+                       match
+                       cons car cdr pair? null? null
+			caar cdar cadr cddr caddr cdddr cadddr cddddr
+                       ;undefined?
                        and
                        or
-                       cond
+                       cond when unless
                        map ormap andmap assoc member)
-           (lib "list.ss"))
+           ;(lib "list.ss")
+           (lib "contract.ss"))
   
   (define-syntax cond
     (syntax-rules (else =>)
@@ -72,14 +64,51 @@
                           (if v
                               v
                               (or exps ...)))]))
+
+  (define-syntax when
+    (syntax-rules ()
+      [(_ test body ...) (if test (begin body ...))]))
+
+  (define-syntax unless
+    (syntax-rules ()
+      [(_ test body ...) (if (not test) (begin body ...))]))
   
   (define (ormap proc lst)
-    (and (lift #t cons? lst)
-         (or (proc (lift #t first lst)) (ormap proc (lift #t rest lst)))))
+    (and (pair? lst)
+         (or (proc (car lst)) (ormap proc (cdr lst)))))
   
   (define (andmap proc lst)
-    (or (lift #f empty? lst)
-        (and (proc (lift #t first lst)) (andmap proc (lift #t rest lst)))))
+    (or (null? lst)
+        (and (proc (car lst)) (andmap proc (cdr lst)))))
+  
+  (define (caar v)
+    (car (car v)))
+  
+  (define (cdar v)
+    (cdr (car v)))
+  
+  (define (cadr v)
+    (car (cdr v)))
+  
+  (define (cddr v)
+    (cdr (cdr v)))
+  
+  (define (caddr v)
+    (car (cddr v)))
+  
+  (define (cdddr v)
+    (cdr (cddr v)))
+  
+  (define (cadddr v)
+    (car (cdddr v)))
+  
+  (define (cddddr v)
+    (cdr (cdddr v)))
+  
+;  (define list
+;    (case-lambda
+;      [() null]
+;      [(a . d) (cons a (apply list d))]))
   
   (define-syntax frtime:case
     (syntax-rules ()
@@ -100,20 +129,15 @@
            (vcase v clause ...))]))
   
   (define map
-    (let ([first (lambda (l) (lift #t first l))]
-          [rest (lambda (l) (lift #t rest l))]
-          [cons (lambda (f r) (lift #f cons f r))]
-          [cons? (lambda (v) (lift #t cons? v))])
-      (case-lambda
-        [(f l) (if (cons? l)
-                   (cons (f (first l)) (map f (rest l)))
-                   empty)]
-        [(f l . ls) (if (and (cons? l) (andmap cons? ls))
-                        (cons (lift #f apply f (first l) (map first ls)) (lift #f apply map f (rest l) (map rest ls)))
-                        empty)])))
+    (case-lambda
+      [(f l) (if (pair? l)
+                 (cons (f (car l)) (map f (cdr l)))
+                 null)]
+      [(f l . ls) (if (and (pair? l) (andmap pair? ls))
+                      (cons (lift #f apply f (car l) (map car ls)) (lift #f apply map f (cdr l) (map cdr ls)))
+                      null)]))
 
   ; TO DO: assoc member [vectors] structs
-
   ; first cut: could be made more efficient by creating
   ; a dedicated signal to update each element of the vector
   (define (frtime:vector . args)
@@ -125,17 +149,42 @@
        (lambda ()
          (let ([tmp v2])
            (set! v2 v1)
+
            (set! v1 tmp))
          (let loop ([i 0] [args args])
            (when (< i n)
-             (vector-set! v1 i (get-value (first args)))
-             (loop (add1 i) (rest args))))
+             (vector-set! v1 i (value-now (car args)))
+             (loop (add1 i) (cdr args))))
          v1)
        args)))
-  
+  #|
+  (define (frtime:vector . args)
+    (let* ([n (length args)]
+           [v1 (make-vector n)]
+           [arg-behs 
+            ; initialize the vector
+            (let loop ([i 0] [args args] [ret empty])
+              (when (< i n)
+                (vector-set! v1 i (value-now (first args)))
+                (loop (add1 i)
+                      (rest args)
+                      (proc->signal
+                       (lambda () (vector-set! v1 i (value-now (first args))))))))])))
+
+  (define-syntax -->
+    (syntax-rules ()
+      [(_ args body) (lambda args body)]))
+  |#
+
+  (define ((behaviorof pred) x)
+    (let ([v (value-now x)])
+      (or (undefined? v)
+          (pred v))))
+
+  ;; Imported from mzscheme:
   (provide (lifted + - * / = eq? equal? eqv? < > <= >= list? add1 cos sin tan symbol->string symbol?
-                   number->string exp expt even? odd? list-ref string-append pair?
-                   sub1 sqrt not number? string? zero? min max modulo car cdr null?
+                   number->string exp expt even? odd? list-ref string-append eval
+                   sub1 sqrt not number? string? zero? min max modulo list
                    string->number format void? rational? char? char-upcase char-ci>=? char-ci<=?
                    string>=? char-locale-upcase char-upper-case? char-alphabetic? char-locale-ci>?
                    char-locale-ci<? string<? char-locale-ci=? string-ci=? string-locale-ci>?
@@ -151,17 +200,143 @@
                    date-minute date-second make-date char-downcase char>=? char<=? char->integer boolean?
                    integer? quotient remainder positive? negative? inexact->exact exact->inexact
                    make-polar denominator truncate bitwise-not bitwise-xor bitwise-and bitwise-ior inexact?
-                   char-whitespace? assq assv memq memv list-tail reverse append length seconds->date)
+                   char-whitespace? assq assv memq memv list-tail reverse append length seconds->date
+                   expand syntax-object->datum exn-message
+
+                   )
            (rename frtime:case case)
            (rename frtime:vector vector)
            (rename eq? mzscheme:eq?)
-           (lifted/nonstrict cons list apply)
+           (lifted/nonstrict apply)
+           make-namespace namespace? namespace-symbol->identifier namespace-variable-value
+           namespace-set-variable-value! namespace-undefine-variable! namespace-mapped-symbols
+           parameterize current-seconds current-milliseconds current-inexact-milliseconds
            call-with-values
            null gensym collect-garbage
-           error define-struct set! printf for-each void when unless
+           error define-struct set! printf for-each void
            procedure-arity-includes? raise-type-error raise
            make-exn:application:mismatch current-continuation-marks
            raise-mismatch-error require-for-syntax define-syntax syntax-rules syntax-case
-           namespace-variable-value
+           set-eventspace
+
+           lambda
+           case-lambda
+           define-values
+           define
+           let
+           let-values
+           let*
+           begin
+           begin0
+           quote
+           quasiquote
+           unquote
+           values
+           syntax
+           
+           )
+
+  ;; Defined in frp.ss:
+  (provide module
+           #%app
+           #%top
+           #%datum
+           #%plain-module-begin
+           #%module-begin
+           watch
+           require
+           provide
+           letrec
+           undefined
+           undefined?
+           if
+           lift
+           match
+           time-b
+           seconds
+           milliseconds
+           exceptions
+           cons
+           pair?
+           null?
+           car
+           cdr
+           signal?
+           behavior?
+           event?
+           )
+           
+
+ ; (define (behavior? v) (not (event? v)))
+
+  ;; Defined in this module:
+  (provide when unless behaviorof -=> nothing nothing?
            cond and or andmap ormap map
-           (all-from-except (lib "frp.ss" "frtime"))))
+           caar cadr cdar cddr caddr cdddr cadddr cddddr)
+
+  (define (non-event? v)
+    (not (event? v)))
+
+  (provide/contract
+   [proc->signal (((-> void?))
+                  any?
+                  . ->* . (signal?))]
+
+   [value-now (any? . -> . any)]
+
+   [until (any? any? . -> . behavior?)]
+
+   [switch (any? event? . -> . behavior?)]
+
+   [merge-e (() (listof event?) . ->* . (event?))]
+
+   [once-e (event? . -> . event?)]
+
+   [changes (any? . -> . event?)]
+
+   [event-receiver (-> event?)]
+
+   [when-e (any? . -> . event?)]
+
+   [==> (event? (any? . -> . any) . -> . event?)]
+
+   [=#> (event? (any? . -> . any) . -> . event?)]
+
+   [=#=> (event? (any? . -> . (union any? nothing?)) . -> . event?)]
+
+   [map-e ((any? . -> . any) event? . -> . event?)]
+   
+   [filter-e ((any? . -> . any) event? . -> . event?)]
+
+   [filter-map-e ((any? . -> . (union any? nothing?)) event? . -> . event?)]
+
+   [collect-e (event? any? (any? any? . -> . any) . -> . event?)]
+
+   [collect-b (event? any? (any? any? . -> . any) . -> . behavior?)]
+
+   [accum-e (event? any? . -> . event?)]
+   
+   [accum-b (event? any? . -> . behavior?)]
+
+   [send-event (event? any? . -> . void?)]
+
+   [hold ((event?) (any?) . opt-> . behavior?)]
+
+   [new-cell (() (any?) . opt-> . behavior?)]
+
+   [set-cell! (behavior? any? . -> . void?)]
+
+   [snapshot-e ((event?) any? . ->* . (event?))]
+
+   [snapshot-map-e ((procedure? event?)
+                    any?     ;; the behaviors
+                    . ->* . 
+                    (event?))]
+
+   [derivative (any? . -> . behavior?)]
+
+   [integral ((any?) (any?) . opt-> . behavior?)]
+
+   [delay-by (any? any? . -> . any?)]
+
+   ))

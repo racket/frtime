@@ -4,15 +4,18 @@
    (lib "animation.ss" "frtime")
    (lib "gui.scm" "frtime"))
   
+  (provide (all-defined-except))
+  
+  (define radius (make-slider "Radius" 30 50 30))
+  (define crank (make-slider "Crank length" 150 200 150))
+  
   (display-shapes
    (let* ([x-center 300]
           [y-center 200]
           ;[radius (+ 30 (range-control (key #\W) (key #\w) 20))]
-          [radius (make-slider "Radius" 30 50 30)]
           [cylinder-width (* 2 radius)]
           [hatch-frac 0.6]
           ;[crank (+ 150 (range-control (key #\C) (key #\c) 50))]
-          [crank (make-slider "Crank length" 150 200 150)]
           ;[piston-height (+ 20 (range-control (key #\P) (key #\p) 20))]
           [piston-height (make-slider "Piston height" 20 40 20)]
           [piston-width 12]

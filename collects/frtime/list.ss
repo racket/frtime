@@ -1,9 +1,15 @@
 (module list (lib "frtime.ss" "frtime")
   
   (require (lifted (lib "list.ss")
-                   first second third fourth fifth sixth seventh eighth
-                   last-pair rest empty? cons?)
-           (as-is (lib "list.ss") empty))
+                   fifth sixth seventh eighth
+                   last-pair empty? cons?)
+           (rename (lib "list.ss") empty empty))
+
+  (define first car)
+  (define rest cdr)
+  (define second cadr)
+  (define third caddr)
+  (define fourth cadddr)
   
   (define remove
     (letrec ([rm (case-lambda 
