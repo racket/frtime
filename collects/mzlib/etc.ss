@@ -277,18 +277,33 @@
    (lambda (stx)
      (syntax-case stx ()
        [(_ val [test body ...] ...)
-	(with-syntax ([(test ...)
-		       (map
-			(lambda (t)
-			  (syntax-case t (else)
-			    [else #t]
-			    [_else t]))
-			(syntax->list (syntax (test ...))))])
-	  (syntax/loc stx
+	(let ([tests (syntax->list (syntax (test ...)))])
+	  (with-syntax ([(a-test ...)
+			 (map
+			  (lambda (t)
+			    (syntax-case t (else)
+			      [else (syntax #t)]
+			      [_else (with-syntax ([t t])
+				       (syntax (eqv? evcase-v t)))]))
+			  tests)])
+	    ;; Make sure else is last:
+	    (unless (null? tests)
+	      (let loop ([tests tests])
+		(unless (null? (cdr tests))
+		  (when (and (identifier? (car tests))
+			     (module-identifier=? (quote-syntax else) (car tests)))
+		    (raise-syntax-error
+		     'evcase
+		     "else is not in last clause"
+		     stx
+		     (car tests)))
+		  (loop (cdr tests)))))
+	    (syntax/loc stx
 	      (let ([evcase-v val])
-		[(eqv? evcase-v test)
-		 body ...]
-		...)))]
+		(cond
+		 [a-test
+		  (begin body ...)]
+		 ...)))))]
        [(_ val something ...)
 	;; Provide a good error message:
 	(for-each
@@ -354,13 +369,13 @@
 	       [(recs (var expr) ...)
 		(andmap var? (syntax->list (syntax (var ...))))
 		'ok]
-	       [(_ expr)
+	       [(_ expr0 expr ...)
 		'ok]
-	       [(val . _) (bad clause "val")]
-	       [(rec . _) (bad clause "rec")]
-	       [(vals . _) (bad clause "vals")]
-	       [(recs . _) (bad  clause"recs")]
-	       [(_ . _) (bad clause "_")]
+	       [(val . __) (bad clause "val")]
+	       [(rec . __) (bad clause "rec")]
+	       [(vals . __) (bad clause "vals")]
+	       [(recs . __) (bad  clause"recs")]
+	       [(_ . __) (bad clause "_")]
 	       [_else (raise-syntax-error 'let+ "bad clause" stx clause)]))
 	   clauses)
 	  ;; result
@@ -368,7 +383,9 @@
 	  (if (null? clauses)
 	      (syntax (let () body1 body ...))
 	      (with-syntax ([rest (loop (cdr clauses))])
-		(syntax-case (car clauses) (val rec vals recs _)
+		(syntax-case* (car clauses) (val rec vals recs _)  (lambda (a b) 
+								     (eq? (syntax-e b) 
+									  (syntax-e a)))
 		  [(val var expr)
 		   (with-syntax ([vars (normal-var (syntax var))])
 		     (syntax (let-values ([vars expr]) rest)))]
@@ -381,8 +398,8 @@
 		  [(recs (var expr) ...)
 		   (with-syntax ([(vars ...) (map normal-var (syntax->list (syntax (var ...))))])
 		     (syntax (letrec-values ([vars expr] ...) rest)))]
-		  [(_ expr)
-		   (syntax (begin expr rest))])))))])))
+		  [(_ expr0 expr ...)
+		   (syntax (begin expr0 expr ... rest))])))))])))
 
  (define-syntax (this-expression-source-directory stx)
    (syntax-case stx ()
