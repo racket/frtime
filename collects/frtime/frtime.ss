@@ -146,7 +146,7 @@
                    string-ci<? string-ci>=? string<=? string-ci<=? string>? string-locale<? string=?
                    string-length string-ref char-locale-downcase char-locale-lower-case? char-locale-upper-case?
                    char-locale-whitespace? char-locale-numeric? char-locale-alphabetic? floor angle round
-                   ceiling real? date-hour vector-ref procedure?
+                   ceiling real? date-hour vector-ref procedure? procedure-arity
                    rationalize date-year-day date-week-day date? date-dst? date-year date-month date-day
                    date-minute date-second make-date char-downcase char>=? char<=? char->integer boolean?
                    integer? quotient remainder positive? negative? inexact->exact exact->inexact
@@ -156,10 +156,12 @@
            (rename frtime:vector vector)
            (rename eq? mzscheme:eq?)
            (lifted/nonstrict cons list apply)
+           call-with-values
            null gensym collect-garbage
            error define-struct set! printf for-each void when unless
            procedure-arity-includes? raise-type-error raise
            make-exn:application:mismatch current-continuation-marks
-           raise-mismatch-error
+           raise-mismatch-error require-for-syntax define-syntax syntax-rules syntax-case
+           namespace-variable-value
            cond and or andmap ormap map
            (all-from-except (lib "frp.ss" "frtime"))))

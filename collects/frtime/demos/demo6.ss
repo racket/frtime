@@ -57,7 +57,7 @@
                         (when-e (> (posn-x pos1) 500))
                         (when-e (< (posn-x pos1) -100))
                         (when-e (> (posn-y pos1) 500))
-                        (when-e (< (posn-y pos1) -100))) . ==> . (lambda (dummy) (posn+ (make-posn 100 100) (posn-integral vel1)))))]
+                        (when-e (< (posn-y pos1) -100))) . -=> . (posn+ (make-posn 100 100) (posn-integral vel1))))]
                [vel1 (accum-b
                       (merge-e
                        ((merge-e
