@@ -8,7 +8,7 @@
 	   build-struct-generation
 	   build-struct-expand-info
 	   struct-declaration-info?
-
+           
 	   generate-struct-declaration
 	   generate-delayed-struct-declaration)
 
@@ -275,5 +275,3 @@
 		    super-info
 		    #'name
 		    (syntax->list #'field-names)))])))
-
-
