@@ -1,0 +1,140 @@
+The `frtime' collection contains the implementation of FrTime, a
+language that supports declarative construction of reactive systems
+through _signals_, or time-varying values.  Signals are classified as
+either _behaviors_, which have a value at any point in (conceptually
+continuous) time, or _events_, which are streams of discrete
+occurrences.  Unlike (for example) boxes, the time-varying nature of
+signals propagates automatically to expressions in which they are
+used.
+
+To interact with FrTime, set the language level to FrTime.  You can
+also make FrTime the language for a module:
+
+(module <module-name> (lib "frp.ss" "frtime")
+   <module-body>)
+
+For the animation library and demo programs, set the language level
+to (module ...), open the file, and execute.  The demos are perhaps
+the best way to learn about FrTime.
+
+Note that FrTime is experimental, and various aspects of it may change
+significantly, though we will try our best to maintain backwards
+compatibility.
+
+PRIMITIVE SIGNALS ----------------------------------------------------
+
+> seconds : behavior<num>
+
+  This behavior updates approximately every second with the value of
+  (current-seconds).
+
+> milliseconds : behavior<num>
+
+  This behavior updates approximately every 20 milliseconds with the
+  value of (current-milliseconds).  Future versions of FrTime will
+  provide an interface through which the programmer can create timers
+  with arbitrary update frequencies.
+
+CREATING NEW SIGNALS -------------------------------------------------
+
+> (new-cell behavior) -> cell (a special behavior)
+
+  The returned cell can be used as a behavior; initially its value is
+  determined by the behavior given to the constructor.  For example,
+  (new-cell seconds) behaves like _seconds_.  However:
+
+> (set-cell! cell behavior) -> void
+
+  This procedure changes the value of the cell to that of the new
+  behavior.
+
+> (event-receiver) -> event-rcvr (a special event)
+
+  The returned value can be used as an event stream.  Specifically, it
+  emits an event occurrence whenever it is used as the first argument
+  to the following procedure:
+
+> (send-event event-rcvr any) -> void
+
+  Emits the second argument as an occurrence on the given event stream.
+
+SIGNAL PROCESSORS ----------------------------------------------------
+
+> (cur-val behavior<a>) -> a
+
+  This procedure projects the current value of the given behavior.
+
+> (delay-by behavior<a> behavior<num>) -> behavior<a>
+
+  This procedure delays the given behavior by the given number of
+  milliseconds (which need not be constant).
+
+> (integral behavior<num> [behavior<num> = 20]) -> behavior<num>
+
+  Computes a numeric approximation of the integral of the first
+  argument with respect to time, at a minimum rate given by the second
+  argument (interpreted in milliseconds).  This procedure will probably
+  be rewritten soon.
+
+> (derivative behavior<num>) -> behavior<num>
+
+  Computes a numeric approximation of the derivative of the first
+  argument with respect to time.  This procedure needs to be
+  rewritten.
+
+> (proc behavior ...) -> behavior
+
+  When applying an ordinary procedure to a list of arguments, any of
+  which are behaviors, the application is automatically _lifted_.  The
+  resulting behavior reflects the current values of the procedure and
+  arguments at every moment in time.  For example, (even? seconds)
+  returns a boolean behavior whose value indicates at every moment
+  whether _seconds_ is even.
+
+  Some procedures are intended to take behavior arguments (e.g. all of
+  the procedures just mentioned).  Applications of such procedures are
+  not lifted.
+
+> (map-e event proc) -> event
+> (event . ==> . proc) -> event
+
+  Returns an event stream isomorphic to the given event stream, except
+  that each occurrence is the result of applying the given procedure
+  to the input occurrence.
+
+> (filter-e event pred) -> event
+> (event . =#> . pred) -> event
+
+  Returns a filtered version of the given event stream.  Only
+  occurrences that satisfy the given predicate survive.
+
+> (merge-e event ...) -> event
+
+  Merges all of the input event streams into a single event stream.
+
+> (hold init event) -> behavior
+
+  Constructs a behavior from a given initial value and an event
+  stream.  The value of the behavior is the value of the most recent
+  event occurrence.
+
+> (accum-e event<a -> a> a) -> event<a>
+
+  Constructs an event stream by accumulating changes (carried by the
+  given event stream) over an initial value.
+
+> (accum-b event<a -> a> a) -> behavior<a>
+
+  Combines functionality of _accum-e_ and _hold_ to construct a behavior.
+  (accum-b ev init) = (hold init (accum-e ev init)).
+
+> (collect-e event<a> b (a b -> b)) -> event<b>
+
+  Like _accum-e_, except the transformer function is fixed and is applied
+  to the current accumulator and the event occurrence.
+
+> (collect-b event<a> b (a b -> b)) -> behavior<b>
+
+  collect-b : collect-e :: accum-b : accum-e
+
+More to come...
