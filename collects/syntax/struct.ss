@@ -90,7 +90,7 @@
 			   base))]
 	     [qs (lambda (x) (if (eq? x #t)
 				 x
-				 (and x `(quote-syntax ,x))))])
+				 (and x `(syntax-local-certify (quote-syntax ,x)))))])
 	`(list-immutable
 	  ,(qs (car names))
 	  ,(qs (cadr names))
