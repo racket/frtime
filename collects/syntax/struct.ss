@@ -63,7 +63,7 @@
 		     ,@acc/mut-makers))))))
 
   (define build-struct-expand-info
-    (lambda (name-stx fields omit-sel? omit-set? base-getters base-setters)
+    (lambda (name-stx fields omit-sel? omit-set? base-name base-getters base-setters)
       (let* ([names (build-struct-names name-stx fields omit-sel? omit-set?)]
 	     [flds (cdddr names)]
 	     [every-other (lambda (l)
@@ -81,7 +81,9 @@
 				  [else (loop (cdr l))]))
 			       (append base '(#f)))
 			   base))]
-	     [qs (lambda (x) (and x `(quote-syntax ,x)))])
+	     [qs (lambda (x) (if (eq? x #t)
+				 x
+				 (and x `(quote-syntax ,x))))])
 	`(list-immutable
 	  ,(qs (car names))
 	  ,(qs (cadr names))
@@ -93,7 +95,8 @@
 	   ,@(reverse (map qs (every-other (if (null? flds)
 					      null
 					      (cdr flds)))))
-	   ,@(map qs (add-#f omit-set? base-setters)))))))
+	   ,@(map qs (add-#f omit-set? base-setters)))
+	  ,(qs base-name)))))
 
 
   (define (struct-declaration-info? x)
@@ -109,11 +112,12 @@
 			(id/#f-list? (cdr x)))))))
 
     (and (list? x)
-	 (= (length x) 5)
+	 (= (length x) 6)
 	 (identifier/#f? (car x))
 	 (identifier/#f? (cadr x))
 	 (identifier/#f? (caddr x))
 	 (id/#f-list? (list-ref x 3))
-	 (id/#f-list? (list-ref x 4)))))
+	 (id/#f-list? (list-ref x 4))
+	 (or (eq? #t (list-ref x 5)) (identifier/#f? (list-ref x 5))))))
 
 
