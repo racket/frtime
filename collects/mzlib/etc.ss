@@ -425,15 +425,25 @@
  (define-syntax (this-expression-source-directory stx)
    (syntax-case stx ()
      [(_)
-      (let ([source (syntax-source stx)])
+      (let ([source (syntax-source stx)]
+	    [local (lambda ()
+		     (let ([s (or (current-load-relative-directory)
+				  (current-directory))])
+		       (datum->syntax-object
+			(quote-syntax 'here)
+			s
+			stx)))])
 	(if (and source
 		 (string? source)
 		 (file-exists? source))
 	    (let-values ([(base file dir?) (split-path source)])
-	      (with-syntax ([base base])
-		(syntax base)))
-	    (syntax (or (current-load-relative-directory)
-			(current-directory)))))]))
+	      (cond
+	       [(string? base)
+		(with-syntax ([base base])
+		  (syntax base))]
+	       [else ; must be (eq? base 'relative)
+		(local)]))
+	    (local)))]))
 
  ;; This is a macro-generating macro that wants to expand
  ;; expressions used in the generated macro. So it's weird,
