@@ -97,11 +97,13 @@
 			   [(3) "rd"]
 			   [(0 4 5 6 7 8 9) "th"])))
 	     (hour (date-hour date))
-	     (am-pm (if (> hour 12) "pm" "am"))
+	     (am-pm (if (>= hour 12) "pm" "am"))
 	     (hour24 (add-zero hour))
-	     (hour12 (if (> hour 12)
-			 (number->string (- hour 12))
-			 (number->string hour)))
+	     (hour12 (number->string 
+		      (cond
+		       [(zero? hour) 12]
+		       [(> hour 12) (- hour 12)]
+		       [else hour])))
 	     (minute (add-zero (date-minute date)))
 	     (second (add-zero (date-second date))))
 	(let-values
