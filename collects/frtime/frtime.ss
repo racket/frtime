@@ -21,7 +21,8 @@
                        map ormap andmap assoc member)
            (rename mzscheme mz:cons cons)
            ;(lib "list.ss")
-           (lib "contract.ss"))
+           (lib "contract.ss")
+           (rename "erl.ss" tid? tid?))
   
   (define-syntax cond
     (syntax-rules (else =>)
@@ -188,11 +189,6 @@
       [(_ args body) (lambda args body)]))
 |#
   
-  (define raise-exceptions (new-cell #t))
-  (define exception-raiser
-    (exceptions . ==> . (lambda (p) (when (value-now raise-exceptions)
-                                      (thread (lambda () (raise (car p))))))))
-  
   (define ((behaviorof pred) x)
     (let ([v (value-now x)])
       (or (undefined? v)
@@ -201,8 +197,8 @@
   ;; Imported from mzscheme:
   (provide (lifted + - * / = eq? equal? eqv? < > <= >= list? add1 cos sin tan symbol->string symbol?
                    number->string exp expt even? odd? list-ref string-append eval
-                   sub1 sqrt not number? string? zero? min max modulo list
-                   string->number format void? rational? char? char-upcase char-ci>=? char-ci<=?
+                   sub1 sqrt not number? string? zero? min max modulo
+                   string->number void? rational? char? char-upcase char-ci>=? char-ci<=?
                    string>=? char-locale-upcase char-upper-case? char-alphabetic? char-locale-ci>?
                    char-locale-ci<? string<? char-locale-ci=? string-ci=? string-locale-ci>?
                    string-locale-ci<? string-locale-ci=? atan asin acos exact? magnitude imag-part
@@ -234,7 +230,7 @@
            make-exn:application:mismatch current-continuation-marks
            raise-mismatch-error require-for-syntax define-syntax syntax-rules syntax-case
            set-eventspace
-           (lifted/nonstrict apply)
+           (lifted:nonstrict apply format list)
            lambda
            case-lambda
            define-values
@@ -282,13 +278,14 @@
            event?
            event-receiver?
            frtime-version
+           raise-exceptions
            )
            
 
  ; (define (behavior? v) (not (event? v)))
 
   ;; Defined in this module:
-  (provide when unless behaviorof -=> nothing nothing? raise-exceptions
+  (provide when unless behaviorof -=> nothing nothing?
            cond and or andmap ormap map
            caar cadr cdar cddr caddr cdddr cadddr cddddr)
 
@@ -365,5 +362,9 @@
    [integral ((value-nowable?) (value-nowable?) . opt-> . behavior?)]
 
    [delay-by (value-nowable? value-nowable? . -> . behavior?)]
+   
+   [bind (symbol? event? . -> . event?)]
+   
+   [remote-reg (tid? symbol? . -> . event?)]
 
    ))

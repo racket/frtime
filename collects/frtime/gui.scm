@@ -115,17 +115,19 @@
     (class* super (reactive-view<%>)
 ;    (mixin (view<%>) (reactive-view<%>)
       (init-field
-       (cell (new-cell undefined))
-       (updater (proc->signal
-		 (lambda ()
-                   (let ([cur-val (value-now cell)])
-                     (unless (undefined? cur-val)
-                     (send this set-value cur-val))))
-                 cell)))
+       [cell (new-cell undefined)]
+       [updater #f])
       
       (super-instantiate ())
       
       (define/public (set-behavior beh)
+        (unless updater
+          (set! updater
+                (proc->signal
+                 (lambda ()
+                   (send this set-value (value-now cell))
+                   (value-now cell))
+                 cell)))
         (set-cell! cell beh))))
 ;   (define (drive-view-thread view event)
 ;     (let ((view-box (make-weak-box view)))
@@ -148,6 +150,17 @@
   (define reactive-gauge%
     (reactive-view-mixin
      (class* gauge% (view<%>)
+       (rename [std-set-value set-value])
+       (override set-value)
+       (inherit show is-shown?)
+       (define (set-value val)
+         (if (undefined? val)
+             (when (is-shown?)
+               (show #f))
+             (begin
+               (unless (is-shown?)
+                 (show #t))
+               (std-set-value val))))
        (super-instantiate ()))))
   
   (define reactive-message%
@@ -213,9 +226,10 @@
                              ;(style (list 'plain 'horizontal))
                              )))
   
-  (define (make-check-box str)
-    (make-control-behavior (instantiate reactive-check-box% ()
-                             (label str) (parent frame))))
+  (define make-check-box
+    (opt-lambda (str [val #f])
+      (make-control-behavior (instantiate reactive-check-box% ()
+                               (label str) (parent frame) (value val)))))
   
   (define fresh-window
     (let ([first #t])

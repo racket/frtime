@@ -1,13 +1,4 @@
 
-#|
-
-The EoPL language can almost be specified via info.ss fields, but
-on-execute needs to install the EoPL exception handler as its 
-last action. (The module body can't do that, because a `with-handlers'
-wraps the load of the module.)
-
-|#
-
 (module frtime-tool mzscheme
   (require (lib "unitsig.ss")
 	   (lib "class.ss")

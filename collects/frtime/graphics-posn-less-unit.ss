@@ -107,6 +107,10 @@
        
        [on-event 
 	(lambda (mouse-event)
+          (set! current-mouse-pos (make-posn (send mouse-event get-x)
+                                             (send mouse-event get-y)))
+          (send-event mouse-listener mouse-event))]
+#|
 	  (let* ([x (send mouse-event get-x)]
 		 [y (send mouse-event get-y)]
 		 [left? (send mouse-event button-down? 'left)]
@@ -116,7 +120,7 @@
             (set! current-mouse-pos (make-posn x y))
             (if mouse-listener
                 (send-event mouse-listener sixm))))]
-       
+|#       
        [on-char
 	(lambda (key-event)
           (if key-listener

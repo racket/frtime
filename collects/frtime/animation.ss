@@ -3,10 +3,11 @@
   (require (all-except "graphics.ss" make-posn posn-x posn-y make-rgb)
            (lifted "graphics.ss" posn-x posn-y make-posn make-rgb)
            (all-except (lib "match.ss") match)
+           (lib "class.ss")
            (lib "list.ss" "frtime")
            (lib "etc.ss" "frtime")
            (lifted (lib "math.ss") sqr)
-           (as-is/unchecked (lib "math.ss") pi)
+           (as-is:unchecked (lib "math.ss") pi)
            (as-is mzscheme sleep))
   
   (open-graphics)
@@ -27,16 +28,15 @@
                     (hold ((viewport-mouse-events window)
                            . ==> . 
                            (lambda (ev) (make-posn
-                                         (sixmouse-x ev)
-                                         (sixmouse-y ev))))
+                                         (send ev get-x)
+                                         (send ev get-y))))
                           (query-mouse-posn window)))
               
               (set! key-strokes ((viewport-key-events window) . ==> . sixkey-value))
               
-              (set! left-clicks ((viewport-mouse-events window) . =#> . sixmouse-left?))
-              (set! middle-clicks ((viewport-mouse-events window) . =#> . sixmouse-middle?))
-              (set! right-clicks ((viewport-mouse-events window) . =#> . sixmouse-right?))))
-        (sleep .2))))
+              (set! left-clicks ((viewport-mouse-events window) . =#> . (lambda (ev) (send ev button-down? 'left))))
+              (set! middle-clicks ((viewport-mouse-events window) . =#> . (lambda (ev) (send ev button-down? 'middle))))
+              (set! right-clicks ((viewport-mouse-events window) . =#> . (lambda (ev) (send ev button-down? 'right)))))))))
     
   (define window
     (open-viewport "Animation - DrScheme" 400 400))
@@ -46,10 +46,12 @@
   
   (define mouse-pos
     (hold ((viewport-mouse-events window)
-           . ==> . 
-           (lambda (ev) (make-posn
-                         (sixmouse-x ev)
-                         (sixmouse-y ev))))
+           . =#=> . 
+           (lambda (ev) (if (send ev moving?)
+                            (make-posn
+                             (send ev get-x)
+                             (send ev get-y))
+                            nothing)))
           (query-mouse-posn window)))
   
   (define filtered-keys (viewport-key-events window))
@@ -58,9 +60,12 @@
   (define meta-down (hold (filtered-keys . ==> . sixkey-meta)))
   (define alt-down (hold (filtered-keys . ==> . sixkey-alt)))
   (define key-strokes ((viewport-key-events window) . ==> . sixkey-value))
-  (define left-clicks ((viewport-mouse-events window) . =#> . sixmouse-left?))
-  (define middle-clicks ((viewport-mouse-events window) . =#> . sixmouse-middle?))
-  (define right-clicks ((viewport-mouse-events window) . =#> . sixmouse-right?))
+  (define left-clicks ((viewport-mouse-events window) . =#> . (lambda (ev) (send ev button-down? 'left))))
+  (define middle-clicks ((viewport-mouse-events window) . =#> . (lambda (ev) (send ev button-down? 'middle))))
+  (define right-clicks ((viewport-mouse-events window) . =#> . (lambda (ev) (send ev button-down? 'right))))
+  (define left-releases ((viewport-mouse-events window) . =#> . (lambda (ev) (send ev button-up? 'left))))
+  (define middle-releases ((viewport-mouse-events window) . =#> . (lambda (ev) (send ev button-up? 'middle))))
+  (define right-releases ((viewport-mouse-events window) . =#> . (lambda (ev) (send ev button-up? 'right))))
   
   (define-struct ring (center radius color))
   (define-struct solid-ellipse (ul w h color))
@@ -89,6 +94,7 @@
   (define (draw-list a-los)
     (for-each
      (match-lambda
+       [(? undefined?) (void)]
        [($ ring center radius color)
         ((draw-ellipse pixmap)
          (make-posn (- (posn-x center) radius)
@@ -108,8 +114,7 @@
           [else ((draw-solid-rectangle pixmap) (make-posn (+ (posn-x ul) w) (+ (posn-y ul) h)) (- w) (- h) color)])]
        [($ polygon pts offset color) ((draw-solid-polygon pixmap) pts offset color)]
        [(? list? x) (draw-list x)]
-       [(? void?) (void)]
-       [(? undefined?) (void)])
+       [(? void?) (void)])
      a-los))
   
   (define d (lift #t top-level-draw-list l))

@@ -83,6 +83,7 @@
   
   (define (tid? x)
     (and (vector? x)
+         (= (vector-length x) 3)
          (eq? (vector-ref x 0) 'tid)
          (symbol? (vector-ref x 1))
          (symbol? (vector-ref x 2))))
