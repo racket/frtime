@@ -1,0 +1,30 @@
+
+This directory contains the source code for FrTime and the associated
+animation library.  To run the animation/GUI demos, simply open the
+corresponding file, make sure the language level is set to (module
+...), and execute.  See the demo source code for more information.
+
+Demo 1 (demo1.ss) : A collection of balls that move in circles around
+the mouse pointer.  The up and down arrows increase and decrease the
+number of these balls, while the left and right arrows adjust their
+speed.
+
+Demo 2 (demo2.ss) : Simulation of an engine cylinder.  The left and
+right arrows adjust the speed.
+
+Demo 3 (demo3.ss) : Balls moving in circles.
+
+Demo 4 (demo4.ss) : A trail of balls following the mouse.
+
+Demo 5 (demo5.ss) : A ball chasing the mouse.
+
+Demo 6 (demo6.ss) : A simple pong/air-hockey game.  The left paddle
+moves with the up and down arrow keys; the right paddle moves with the
+mouse.  The 'r' key resets the score.
+
+GUI Demo 1 (gui-demo1.ss) : A simple "pizza ordering" user interface
+based on an HtDP exercise.
+
+GUI Demo 2 (gui-demo2.ss) : A simple calculator interface, also based
+on an HtDP exercise except that the result updates continuously as the
+arguments and operator change.
