@@ -41,10 +41,12 @@
 
 ;; Define the position of the center and the radius of the clock.
 (define clock-center
-  (until (make-posn 200 200)
-         (if follow-mouse?
-             (posn- mouse-pos offset)
-             (inf-delay clock-center))))
+  (rec x
+    (inf-delay
+     (until (make-posn 200 200)
+            (if follow-mouse?
+                (posn- mouse-pos offset)
+                x)))))
 
 ;; Define the length of the hands in terms of the radius of the clock.
 (define second-hand-length (- clock-radius 5))

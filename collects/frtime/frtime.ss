@@ -216,15 +216,15 @@
                    number->string exp expt even? odd? list-ref string-append eval
                    sub1 sqrt not number? string? zero? min max modulo
                    string->number void? rational? char? char-upcase char-ci>=? char-ci<=?
-                   string>=? char-locale-upcase char-upper-case? char-alphabetic? char-locale-ci>?
-                   char-locale-ci<? string<? char-locale-ci=? string-ci=? string-locale-ci>?
+                   string>=? char-upper-case? char-alphabetic?
+                   string<? string-ci=? string-locale-ci>?
                    string-locale-ci<? string-locale-ci=? atan asin acos exact? magnitude imag-part
                    real-part numerator abs log lcm gcd arithmetic-shift integer-sqrt make-rectangular
-                   integer-byte-string->integer integer->integer-byte-string complex? char>? char<? char=?
+                   complex? char>? char<? char=?
                    char-numeric? date-time-zone-offset list->string substring string->list
                    string-ci<? string-ci>=? string<=? string-ci<=? string>? string-locale<? string=?
-                   string-length string-ref char-locale-downcase char-locale-lower-case? char-locale-upper-case?
-                   char-locale-whitespace? char-locale-numeric? char-locale-alphabetic? floor angle round
+                   string-length string-ref
+                   floor angle round
                    ceiling real? date-hour vector-ref procedure? procedure-arity
                    rationalize date-year-day date-week-day date? date-dst? date-year date-month date-day
                    date-minute date-second make-date char-downcase char>=? char<=? char->integer integer->char boolean?
@@ -232,12 +232,13 @@
                    make-polar denominator truncate bitwise-not bitwise-xor bitwise-and bitwise-ior inexact?
                    char-whitespace? assq assv memq memv list-tail reverse append length seconds->date
                    expand syntax-object->datum exn-message continuation-mark-set->list exn-continuation-marks
-                   not-break-exn?
+                   exn:fail?
                    )
            (rename frtime:case case)
            (rename frtime:vector vector)
            (rename frtime:vector2 vector2)
            (rename eq? mzscheme:eq?)
+           make-exn:fail
            make-namespace namespace? namespace-symbol->identifier namespace-variable-value
            namespace-set-variable-value! namespace-undefine-variable! namespace-mapped-symbols
            parameterize current-seconds current-milliseconds current-inexact-milliseconds
@@ -245,7 +246,7 @@
            null gensym collect-garbage
            error define-struct set! printf fprintf current-error-port for-each void
            procedure-arity-includes? raise-type-error raise thread
-           make-exn:application:mismatch current-continuation-marks
+           current-continuation-marks
            raise-mismatch-error require-for-syntax define-syntax syntax-rules syntax-case
            set-eventspace
            (lifted:nonstrict apply format list list*)
@@ -373,7 +374,7 @@
 
    [send-synchronous-event (event-receiver? any? . -> . void?)]
 
-   [send-synchronous-events ((listof (list/p event-receiver? any?)) . -> . void?)]
+   [send-synchronous-events (list? . -> . void?)]
 
    [hold ((event?) (value-nowable?) . opt-> . behavior?)]
 

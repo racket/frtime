@@ -118,10 +118,9 @@
            (cond
              [(null? l) #f]
              [(not (pair? l)) 
-              (raise (make-exn:application:mismatch
+              (raise (make-exn:fail
                       (format "~a: second argument must be a (proper) list; given ~e" name list)
-                      (current-continuation-marks)
-                      list))]
+                      (current-continuation-marks)))]
              [else (let ([a (car l)])
                      (if whole-list?
                          (if (f a)

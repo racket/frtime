@@ -23,6 +23,9 @@
 ;; A useful constant.
 (define PI 3.1415626535)
 
+(define (distance x1 y1 x2 y2)
+  (sqrt (+ (sqr (- x1 x2)) (sqr (- y1 y2)))))
+
 ;; create-needle : number -> line
 ;; Define one needle.  A needle's orientation is such that it
 ;; lies on a line between the center of the needle and the 
@@ -41,10 +44,11 @@
          [y1-pos (+ y (* NEEDLE-LENGTH (sin theta1)))]
          [x2-pos (+ x (* NEEDLE-LENGTH (cos theta2)))]
          [y2-pos (+ y (* NEEDLE-LENGTH (sin theta2)))]
+         [color-density (min 1 (/ (distance x1-pos y1-pos (posn-x mouse-pos) (posn-y mouse-pos)) 150.0))]
          )
     (make-line (make-posn x1-pos y1-pos)
                (make-posn x2-pos y2-pos)
-               "black")))
+               (make-rgb (- 1 color-density) 0 0))))
 
 ;; Define a list of needles
 (define needles (build-list (sqr GRID-SIZE) create-needle))

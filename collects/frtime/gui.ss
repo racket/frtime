@@ -150,7 +150,6 @@
   (define reactive-gauge%
     (reactive-view-mixin
      (class* gauge% (view<%>)
-       (rename [std-set-value set-value])
        (override set-value)
        (inherit show is-shown?)
        (define (set-value val)
@@ -160,7 +159,7 @@
              (begin
                (unless (is-shown?)
                  (show #t))
-               (std-set-value val))))
+               (super set-value val))))
        (super-instantiate ()))))
   
   (define reactive-message%

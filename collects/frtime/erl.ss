@@ -6,6 +6,12 @@
            (lib "dns.ss" "net")
            "mymatch.ss")
   
+  (define (with-semaphore s thunk)
+    (semaphore-wait s)
+    (let ([result (thunk)])
+      (semaphore-post s)
+      result))
+    
   (define free-cons-cells
     (box empty))
   
@@ -38,7 +44,7 @@
     ; find first free port after 1178
     (let loop ([port 1178])
       (with-handlers
-          ([exn:i/o:tcp? (lambda (_) (loop (add1 port)))])
+          ([exn:fail:network? (lambda (_) (loop (add1 port)))])
         (values (tcp-listen port) port))))
   
   (define ip-address
@@ -126,7 +132,7 @@
                                     [(not timeout) false]
                                     [(> elapsed timeout) 0]
                                     [else (/ (- timeout elapsed) 1000.0)])]
-                       [val (object-wait-multiple wait-time (mailbox-sem-count mb))])
+                       [val (sync/timeout wait-time (mailbox-sem-count mb))])
                   (if val
                       (let* ([oldhead (mailbox-head mb)]
                              [msg (first oldhead)]
@@ -222,7 +228,7 @@
    (lambda ()
      (let* ([in-ports (make-hash-table)] ; set of input ports
             [out-ports (make-hash-table)] ; symbol(ip:port) -> output port
-            [mk-wait-set (lambda () (apply waitables->waitable-set
+            [mk-wait-set (lambda () (apply choice-evt
                                            (hash-table-map in-ports (lambda (key val) key))))]
             [try-connect (lambda (ip:port)
                            (with-handlers ([exn? (lambda (exn) (report-exn exn) false)])
@@ -237,7 +243,7 @@
                                out-p)))])
        (let loop ([wait-set (mk-wait-set)])
          ;(printf "have connections to ~a~n" (hash-table-map in-ports (lambda (k v) k)))
-         (let ([val (object-wait-multiple #f (mailbox-sem-count forward-mailbox)
+         (let ([val (sync (mailbox-sem-count forward-mailbox)
                                           listener wait-set)])
            (cond
              [(tcp-listener? val)
@@ -272,7 +278,7 @@
                                          (set! wait-set (mk-wait-set)))))])
                    (when out-p
                      ; need to deal with closed ports here too
-                     (with-handlers ([exn:i/o:port:write?
+                     (with-handlers ([exn:fail?
                                       (lambda (_)
                                         (hash-table-remove! out-ports ip:port)
                                         (let ([res (try-connect ip:port)])

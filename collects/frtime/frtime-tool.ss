@@ -45,8 +45,8 @@
 	    "Standard FrTime (includes common libraries)")
           (define/public (get-language-url) #f)
 	  (define/public (get-reader)
-	    (lambda (name port offsets)
-	      (let ([v (read-syntax name port offsets)])
+	    (lambda (name port)
+	      (let ([v (read-syntax name port)])
 		(if (eof-object? v)
 		    v
 		    (namespace-syntax-introduce v)))))
@@ -62,12 +62,12 @@
                     [else false])
                   (loop (rest lis)))))))
             
-      (define (watch watch-list value as-snip?)
+      (define (watch watch-list value)
         (foldl
          (lambda (wb acc)
            (cond
              [(weak-box-value wb)
-              => (lambda (f) (f acc as-snip?))]
+              => (lambda (f) (f acc #t))]
              [else acc]))
          value
          watch-list))
@@ -77,7 +77,6 @@
 		(drscheme:language:simple-module-based-language->module-based-language-mixin
 		 base))
           (field (watch-list empty))
-	  (rename [super-on-execute on-execute])
           (inherit get-language-position)
           (define/override (get-language-name)
             (let* ([pos (get-language-position)]
@@ -87,7 +86,7 @@
                   (string-append "FrTime: " last-part))))
           (define/override (on-execute settings run-in-user-thread)
             (let ([drs-eventspace (current-eventspace)])
-              (super-on-execute settings run-in-user-thread)
+              (super on-execute settings run-in-user-thread)
               (run-in-user-thread
                (lambda ()
                  (let ([new-watch (namespace-variable-value 'render)]
@@ -99,15 +98,13 @@
                               (lambda (r) (cons (make-weak-box new-watch) r)))
                           (filter weak-box-value watch-list))))))))
 
-          (rename (super:render-value/format render-value/format)
-                  (super:render-value        render-value))
           (override render-value/format render-value)
-          (define (render-value/format value settings port put-snip width)
-            (super:render-value/format (watch watch-list value put-snip)
-                                       settings port put-snip width))
-          (define (render-value value settings port put-snip)
-            (super:render-value (watch watch-list value put-snip)
-                                settings port put-snip))
+          (define (render-value/format value settings port width)
+            (super render-value/format (watch watch-list value)
+                                       settings port width))
+          (define (render-value value settings port)
+            (super render-value (watch watch-list value)
+                                settings port))
 	  (define/override (use-namespace-require/copy?) #t)
 	  (super-instantiate ())))
 

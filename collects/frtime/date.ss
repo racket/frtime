@@ -262,7 +262,7 @@
 			      (and (negative? offset) (= hi mid)))
 			  (found lo)
 			  (let ([mid-ok?
-				 (with-handlers ([not-break-exn? (lambda (exn) #f)])
+				 (with-handlers ([exn:fail? (lambda (exn) #f)])
 				   (seconds->date mid)
 				   #t)])
 			    (if mid-ok?
@@ -270,7 +270,7 @@
 				(find-between lo mid))))))])
 	  (let loop ([lo start][offset offset])
 	    (let ([hi (+ lo offset)])
-	      (with-handlers ([not-break-exn? 
+	      (with-handlers ([exn:fail? 
 			       (lambda (exn) 
 					; failed - must be between lo & hi
 				 (find-between lo hi))])
