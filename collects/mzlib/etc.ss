@@ -4,6 +4,7 @@
   (require-for-syntax (lib "kerncase.ss" "syntax")
 		      (lib "stx.ss" "syntax")
 		      (lib "name.ss" "syntax")
+		      (lib "context.ss" "syntax")
 		      "private/stxset.ss")
 
   (provide true false
@@ -196,56 +197,57 @@
    (lambda (stx)
      (syntax-case stx ()
        [(_ (defn ...) body1 body ...)
-	(let ([defs (let loop ([defns (syntax->list (syntax (defn ...)))])
-		      (apply
-		       append
-		       (map
-			(lambda (defn)
-			  (let ([d (local-expand
-				    defn
-				    'internal-define
-				    (kernel-form-identifier-list 
-				     (quote-syntax here)))]
-				[check-ids (lambda (ids)
-					     (for-each
-					      (lambda (id)
-						(unless (identifier? id)
-						  (raise-syntax-error
-						   #f
-						   "not an identifier for definition"
-						   stx
-						   id)))
-					      ids))])
-			    (syntax-case d (define-values define-syntaxes begin)
-			      [(begin defn ...)
-			       (loop (syntax->list (syntax (defn ...))))]
-			      [(define-values (id ...) body)
-			       (begin
-				 (check-ids (syntax->list (syntax (id ...))))
-				 (list d))]
-			      [(define-values . rest)
-			       (raise-syntax-error
-				#f
-				"ill-formed definition"
-				stx
-				d)]
-			      [(define-syntaxes (id ...) body)
-			       (begin
-				 (check-ids (syntax->list (syntax (id ...))))
-				 (list d))]
-			      [(define-syntaxes . rest)
-			       (raise-syntax-error
-				#f
-				"ill-formed definition"
-				stx
-				d)]
-			      [_else
-			       (raise-syntax-error
-				#f
-				"not a definition"
-				stx
-				defn)])))
-			defns)))])
+	(let ([defs (let ([expand-context (generate-expand-context)])
+		      (let loop ([defns (syntax->list (syntax (defn ...)))])
+			(apply
+			 append
+			 (map
+			  (lambda (defn)
+			    (let ([d (local-expand
+				      defn
+				      expand-context
+				      (kernel-form-identifier-list 
+				       (quote-syntax here)))]
+				  [check-ids (lambda (ids)
+					       (for-each
+						(lambda (id)
+						  (unless (identifier? id)
+						    (raise-syntax-error
+						     #f
+						     "not an identifier for definition"
+						     stx
+						     id)))
+						ids))])
+			      (syntax-case d (define-values define-syntaxes begin)
+				[(begin defn ...)
+				 (loop (syntax->list (syntax (defn ...))))]
+				[(define-values (id ...) body)
+				 (begin
+				   (check-ids (syntax->list (syntax (id ...))))
+				   (list d))]
+				[(define-values . rest)
+				 (raise-syntax-error
+				  #f
+				  "ill-formed definition"
+				  stx
+				  d)]
+				[(define-syntaxes (id ...) body)
+				 (begin
+				   (check-ids (syntax->list (syntax (id ...))))
+				   (list d))]
+				[(define-syntaxes . rest)
+				 (raise-syntax-error
+				  #f
+				  "ill-formed definition"
+				  stx
+				  d)]
+				[_else
+				 (raise-syntax-error
+				  #f
+				  "not a definition"
+				  stx
+				  defn)])))
+			  defns))))])
 	  (let ([ids (apply append
 			    (map
 			     (lambda (d)
