@@ -3,7 +3,8 @@
   (require "spidey.ss")
   (require-for-syntax (lib "kerncase.ss" "syntax"))
 
-  (provide true false
+  (provide this-expression-source-directory
+           true false
 	   boolean=? symbol=?
 	   identity
 	   compose
@@ -23,7 +24,19 @@
 	   nor
 	   nand
 	   let+)
-
+  
+  (define-syntax (this-expression-source-directory stx)
+    (syntax-case stx ()
+      [(_)
+       (let ([source (syntax-source stx)])
+         (if (and source
+                  (string? source)
+                  (file-exists? source))
+             (let-values ([(base file dir?) (split-path source)])
+               (with-syntax ([base base])
+                 (syntax base)))
+             (syntax #f)))]))
+    
   (define true #t)
   (define false #f)
   
