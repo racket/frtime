@@ -87,12 +87,12 @@
 	  ,(qs (cadr names))
 	  ,(qs (caddr names))
 	  (list-immutable 
-	   ,@(map qs (every-other fields))
+	   ,@(map qs (every-other flds))
 	   ,@(map qs (add-#f omit-sel? base-getters)))
 	  (list-immutable 
-	   ,@(map qs (every-other (if (null? fields)
+	   ,@(map qs (every-other (if (null? flds)
 				      null
-				      (cdr fields))))
+				      (cdr flds))))
 	   ,@(map qs (add-#f omit-set? base-setters)))))))
 
 
