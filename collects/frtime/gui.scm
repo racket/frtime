@@ -117,14 +117,16 @@
       (init-field
        (cell (new-cell undefined))
        (updater (proc->signal
-		 (lambda () (send this set-value (value-now cell)))
+		 (lambda ()
+                   (let ([cur-val (value-now cell)])
+                     (unless (undefined? cur-val)
+                     (send this set-value cur-val))))
                  cell)))
       
       (super-instantiate ())
       
       (define/public (set-behavior beh)
         (set-cell! cell beh))))
-  
 ;   (define (drive-view-thread view event)
 ;     (let ((view-box (make-weak-box view)))
 ;       (set! view (void))
@@ -153,7 +155,9 @@
      (class* message% (view<%>)
        (inherit set-label)
        (define/public (set-value label)
-         (set-label label))
+         (if (undefined? label)
+             (set-label "")
+             (set-label label)))
        (super-instantiate ()))))
   
   (define frame (instantiate frame% () (label "GUI") (height 150) (width 200)))

@@ -187,6 +187,12 @@
     (syntax-rules ()
       [(_ args body) (lambda args body)]))
 |#
+  
+  (define raise-exceptions (new-cell #t))
+  (define exception-raiser
+    (exceptions . ==> . (lambda (p) (when (value-now raise-exceptions)
+                                      (thread (lambda () (raise (car p))))))))
+  
   (define ((behaviorof pred) x)
     (let ([v (value-now x)])
       (or (undefined? v)
@@ -213,7 +219,6 @@
                    make-polar denominator truncate bitwise-not bitwise-xor bitwise-and bitwise-ior inexact?
                    char-whitespace? assq assv memq memv list-tail reverse append length seconds->date
                    expand syntax-object->datum exn-message continuation-mark-set->list exn-continuation-marks
-
                    )
            (rename frtime:case case)
            (rename frtime:vector vector)
@@ -224,8 +229,8 @@
            parameterize current-seconds current-milliseconds current-inexact-milliseconds
            call-with-values 
            null gensym collect-garbage
-           error define-struct set! printf for-each void
-           procedure-arity-includes? raise-type-error raise
+           error define-struct set! printf fprintf current-error-port for-each void
+           procedure-arity-includes? raise-type-error raise thread
            make-exn:application:mismatch current-continuation-marks
            raise-mismatch-error require-for-syntax define-syntax syntax-rules syntax-case
            set-eventspace
@@ -283,7 +288,7 @@
  ; (define (behavior? v) (not (event? v)))
 
   ;; Defined in this module:
-  (provide when unless behaviorof -=> nothing nothing?
+  (provide when unless behaviorof -=> nothing nothing? raise-exceptions
            cond and or andmap ormap map
            caar cadr cdar cddr caddr cdddr cadddr cddddr)
 
@@ -296,7 +301,7 @@
     (not (and (signal? v) (event-cons? (signal-value v)))))
 
   (provide/contract
-   [proc->signal (((-> void?))
+   [proc->signal (((-> any?))
                   any?
                   . ->* . (signal?))]
 
