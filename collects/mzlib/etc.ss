@@ -20,7 +20,8 @@
 	  rec
 	  evcase
 	  nor
-	  nand)
+	  nand
+	  let+)
 
   (define true #t)
   (define false #f)
@@ -310,4 +311,56 @@
        [(_ expr ...)
 	(syntax/loc stx (not (and expr ...)))])))
 
- )
+ (define-syntax let+
+   (lambda (stx)
+     (syntax-case stx ()
+       [(_ [clause ...] body1 body ...)
+	(let ([clauses (syntax->list (syntax (clause ...)))]
+	      [bad (lambda (c n)
+		     (raise-syntax-error
+		      'let+
+		      (format "illegal use of ~a for a clause" n)
+		      stx
+		      c))])
+	  ;; syntax checks
+	  (for-each
+	   (lambda (clause)
+	     (syntax-case clause (val rec vals recs _)
+		  [(val var expr)
+		   (identifier? (syntax var))
+		   'ok]
+		  [(rec var expr)
+		   (identifier? (syntax var))
+		   'ok]
+		  [(vals (var expr) ...)
+		   (andmap identifier? (syntax->list (syntax (var ...))))
+		   'ok]
+		  [(recs (var expr) ...)
+		   (andmap identifier? (syntax->list (syntax (var ...))))
+		   'ok]
+		  [(_ expr)
+		   'ok]
+		  [(val . _) (bad clause "val")]
+		  [(rec . _) (bad clause "rec")]
+		  [(vals . _) (bad clause "vals")]
+		  [(recs . _) (bad  clause"recs")]
+		  [(_ . _) (bad clause "_")]
+		  [_else (raise-syntax-error 'let+ "bad clause" stx clause)]))
+	   clauses)
+	  ;; result
+	(let loop ([clauses clauses])
+	  (if (null? clauses)
+	      (syntax (let () body1 body ...))
+	      (with-syntax ([rest (loop (cdr clauses))])
+		(syntax-case (car clauses) (val rec vals recs _)
+		  [(val var expr)
+		   (syntax (let ([var expr]) rest))]
+		  [(rec var expr)
+		   (syntax (letrec ([var expr]) rest))]
+		  [(vals (var expr) ...)
+		   (syntax (let ([var expr] ...) rest))]
+		  [(recs (var expr) ...)
+		   (syntax (letrec ([var expr] ...) rest))]
+		  [(_ expr)
+		   (syntax (begin expr rest))])))))]))))
+
