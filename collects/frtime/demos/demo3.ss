@@ -5,7 +5,7 @@
    (lib "gui.scm" "frtime"))
   
   (let* ([radius (make-slider "Radius" 50 150 100)]
-         [speed (* .01 (make-slider "Speed" 25 75 25))]
+         [speed (* .01 (make-slider "Speed" 25 75 50))]
          [phase (wave speed)]
          [ring1 (make-check-box "Show x-y ring")]
          [center (make-check-box "Show center of x-y ring")]

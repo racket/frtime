@@ -274,6 +274,7 @@
            signal?
            behavior?
            event?
+           event-receiver?
            )
            
 
@@ -333,7 +334,11 @@
    
    [accum-b (event? any? . -> . behavior?)]
 
-   [send-event (event? any? . -> . void?)]
+   [send-event (event-receiver? any? . -> . void?)]
+
+   [send-synchronous-event (event-receiver? any? . -> . void?)]
+
+   [send-synchronous-events ((listof (list/p event-receiver? any?)) . -> . void?)]
 
    [hold ((event?) (any?) . opt-> . behavior?)]
 

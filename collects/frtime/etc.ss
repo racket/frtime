@@ -7,7 +7,7 @@
 		      (lib "name.ss" "syntax")
 		      (lib "context.ss" "syntax")
 		      (lib "plthome.ss" "setup")
-		      "../mzlib/private/stxset.ss")
+		      (lib "stxset.ss" "mzlib" "private"))
 
   (provide true false
 	   boolean=? symbol=?
