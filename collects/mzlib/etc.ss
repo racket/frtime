@@ -3,8 +3,7 @@
   (require "spidey.ss")
   (require-for-syntax (lib "kerncase.ss" "syntax"))
 
-  (provide this-expression-source-directory
-           true false
+  (provide true false
 	   boolean=? symbol=?
 	   identity
 	   compose
@@ -23,20 +22,10 @@
 	   evcase
 	   nor
 	   nand
-	   let+)
+	   let+
+
+	   this-expression-source-directory)
   
-  (define-syntax (this-expression-source-directory stx)
-    (syntax-case stx ()
-      [(_)
-       (let ([source (syntax-source stx)])
-         (if (and source
-                  (string? source)
-                  (file-exists? source))
-             (let-values ([(base file dir?) (split-path source)])
-               (with-syntax ([base base])
-                 (syntax base)))
-             (syntax #f)))]))
-    
   (define true #t)
   (define false #f)
   
@@ -49,11 +38,11 @@
       [(f g)
        (let ([f (compose f)]
              [g (compose g)])
-         (if (eqv? 1 (arity f)) ; optimize: don't use call-w-values
-             (if (eqv? 1 (arity g)) ; optimize: single arity everywhere
+         (if (eqv? 1 (procedure-arity f)) ; optimize: don't use call-w-values
+             (if (eqv? 1 (procedure-arity g)) ; optimize: single arity everywhere
                  (lambda (x) (f (g x)))
                  (lambda args (f (apply g args))))
-             (if (eqv? 1 (arity g)) ; optimize: single input
+             (if (eqv? 1 (procedure-arity g)) ; optimize: single input
                  (lambda (a)
                    (call-with-values
                     (lambda () (g a))
@@ -375,5 +364,17 @@
 		  [(recs (var expr) ...)
 		   (syntax (letrec ([var expr] ...) rest))]
 		  [(_ expr)
-		   (syntax (begin expr rest))])))))]))))
+		   (syntax (begin expr rest))])))))])))
 
+ (define-syntax (this-expression-source-directory stx)
+   (syntax-case stx ()
+     [(_)
+      (let ([source (syntax-source stx)])
+	(if (and source
+		 (string? source)
+		 (file-exists? source))
+	    (let-values ([(base file dir?) (split-path source)])
+	      (with-syntax ([base base])
+		(syntax base)))
+	    (syntax (or (current-load-relative-directory)
+			(current-directory)))))])))
