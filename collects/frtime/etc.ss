@@ -81,24 +81,26 @@
                 (string-set!  str  i  (fcn i))
                 (loop  (add1 i))))))))
   
+|#
   ;; (build-vector n f) returns a vector 0..n-1 where the ith element is (f i).
   ;; The eval order is guaranteed to be: 0, 1, 2, ..., n-1.
   ;; eg: (build-vector 4 (lambda (i) i)) ==> #4(0 1 2 3)
   
-  (define  build-vector
+#|
+  (define build-vector
     (polymorphic
-     (lambda  (n  fcn)
-       (unless  (and (integer? n) (exact? n) (>= n 0))
-         (error  'build-vector  "~s must be an exact integer >= 0"  n))
-       (unless  (procedure? fcn)
-         (error  'build-vector  "~s must be a procedure"  fcn))
-       (let  ((vec  (make-vector n)))
-         (let  loop  ((i  0))
-           (if  (= i n)  vec
-                (begin
-                  (vector-set!  vec  i  (fcn i))
-                  (loop  (add1 i)))))))))
-|#  
+     (lambda (n fcn)
+       (unless (and (integer? n) (exact? n) (>= n 0))
+         (error 'build-vector "~s must be an exact integer >= 0" n))
+       (unless (procedure? fcn)
+         (error 'build-vector  "~s must be a procedure" fcn))
+       (let ((vec (make-vector n)))
+         (let loop ((i 0))
+           (if (= i n) vec
+               (begin
+                 (vector-set! vec i (fcn i))
+                 (loop (add1 i)))))))))
+  |#
   (define  build-list
     (polymorphic
      (lambda  (n  fcn)

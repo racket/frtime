@@ -1,7 +1,6 @@
 (module demo1 (lib "frtime.ss" "frtime")
   
   (require (lib "animation.ss" "frtime")
-           (as-is (lib "math.ss") pi)
            (lib "etc.ss" "frtime"))
   
   (define radius 25)

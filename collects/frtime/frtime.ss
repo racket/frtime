@@ -140,42 +140,52 @@
   ; TO DO: assoc member [vectors] structs
   ; first cut: could be made more efficient by creating
   ; a dedicated signal to update each element of the vector
-  (define (frtime:vector . args)
-    (let* ([n (length args)]
-           [v1 (make-vector n)]
-           [v2 (make-vector n)])
-      (apply
-       proc->signal
-       (lambda ()
-         (let ([tmp v2])
-           (set! v2 v1)
+  (define (frtime:vector2 . args)
+    (if (ormap behavior? args)
+        (let* ([n (length args)]
+               [v1 (make-vector n)]
+               [v2 (make-vector n)])
+          (apply
+           proc->signal
+           (lambda ()
+             (let ([tmp v2])
+               (set! v2 v1)
+               (set! v1 tmp))
+             (let loop ([i 0] [args args])
+               (when (< i n)
+                 (vector-set! v1 i (value-now (car args)))
+                 (loop (add1 i) (cdr args))))
+             v1)
+           args))
+        (apply vector args)))
 
-           (set! v1 tmp))
-         (let loop ([i 0] [args args])
-           (when (< i n)
-             (vector-set! v1 i (value-now (car args)))
-             (loop (add1 i) (cdr args))))
-         v1)
-       args)))
-  #|
   (define (frtime:vector . args)
-    (let* ([n (length args)]
-           [v1 (make-vector n)]
-           [arg-behs 
-            ; initialize the vector
-            (let loop ([i 0] [args args] [ret empty])
-              (when (< i n)
-                (vector-set! v1 i (value-now (first args)))
-                (loop (add1 i)
-                      (rest args)
-                      (proc->signal
-                       (lambda () (vector-set! v1 i (value-now (first args))))))))])))
-
+    (if (ormap behavior? args)
+        (let* ([n (length args)]
+               [vec (make-vector n)]
+               [arg-behs 
+                ; initialize the vector
+                (let loop ([i 0] [args args] [ret null])
+                  (if (< i n)
+                      (loop (add1 i)
+                            (cdr args)
+                            (cons
+                             (let ([arg (car args)])
+                               (proc->signal
+                                (lambda ()
+                                  (let ([v (value-now arg)])
+                                    (vector-set! vec i v)
+                                    v))
+                                arg))
+                             ret))
+                      ret))])
+          (apply proc->signal (lambda () vec) arg-behs))
+        (apply vector args)))
+    #|
   (define-syntax -->
     (syntax-rules ()
       [(_ args body) (lambda args body)]))
-  |#
-
+|#
   (define ((behaviorof pred) x)
     (let ([v (value-now x)])
       (or (undefined? v)
@@ -206,8 +216,8 @@
                    )
            (rename frtime:case case)
            (rename frtime:vector vector)
+           (rename frtime:vector2 vector2)
            (rename eq? mzscheme:eq?)
-           (lifted/nonstrict apply)
            make-namespace namespace? namespace-symbol->identifier namespace-variable-value
            namespace-set-variable-value! namespace-undefine-variable! namespace-mapped-symbols
            parameterize current-seconds current-milliseconds current-inexact-milliseconds
@@ -218,7 +228,7 @@
            make-exn:application:mismatch current-continuation-marks
            raise-mismatch-error require-for-syntax define-syntax syntax-rules syntax-case
            set-eventspace
-
+           (lifted/nonstrict apply)
            lambda
            case-lambda
            define-values
