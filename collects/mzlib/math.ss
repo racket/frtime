@@ -6,11 +6,11 @@
 (module math mzscheme
   (provide e 
 	  pi 
-	  square
+	  sqr
 	  sgn conjugate
 	  sinh cosh)
 
-  (define (square z) (* z z))
+  (define (sqr z) (* z z))
   
   ;; circular constants and aliases
   (define e (exp 1.0)) 
