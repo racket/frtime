@@ -5,34 +5,87 @@
            (lib "etc.ss")
            (lib "dns.ss" "net")
            "mymatch.ss")
-    
-  (define ip-address
-    (let-values ([(sub-proc in-p dummy1 dummy2) (subprocess #f #f #f "/bin/hostname" "-i")])
-      (begin0
-        (read in-p)
-        (subprocess-wait sub-proc))))
+  
+  (define free-cons-cells
+    (box empty))
+  
+  (define alloc-sem (make-semaphore 1))
+  
+  (define (mcons a d)
+    (with-semaphore
+     alloc-sem
+     (lambda ()
+       (let ([start (unbox free-cons-cells)])
+         (if (empty? start)
+             (cons a d)
+             (begin
+               (set-box! free-cons-cells (rest start))
+               (set-car! start a)
+               (set-cdr! start d)
+               start))))))
+  
+  (define (release c)
+    (set-cdr! c (unbox free-cons-cells))
+    (set-box! free-cons-cells c))
 
+  
+#|  (define mcons cons)
+  (define release void)
+|#
+  
+  ; for thread ids, port is the TCP port number (not to be confused with MzScheme ports)
+  (define-values (listener port)
+    ; find first free port after 1178
+    (let loop ([port 1178])
+      (with-handlers
+          ([exn:i/o:tcp? (lambda (_) (loop (add1 port)))])
+        (values (tcp-listen port) port))))
+  
+  (define ip-address
+    (let*-values
+        ([(sub-proc in-p dummy1 dummy2) (subprocess #f #f #f "/bin/hostname" "-i")]
+         [(ip-address) (read in-p)])
+      (subprocess-wait sub-proc)
+      (if (eof-object? ip-address)
+          '127.0.0.1
+          ip-address)))
+  
+  (define my-ip:port
+    (string->symbol (format "~a:~a" ip-address port)))
+  
   (define dns
     (dns-find-nameserver))
   
   (define ip-regexp
     (regexp "[0-9][0-9]?[0-9]?\\.[0-9][0-9]?[0-9]?\\.[0-9][0-9]?[0-9]?\\.[0-9][0-9]?[0-9]?"))
   
-  ; a tid is a (vector 'tid symbol(ip) num(port) symbol(gensym))
+  ; a tid is a (vector 'tid symbol(ip:port) symbol(local-id))
   
   (define make-tid
     (case-lambda
-      [(thr) (vector 'tid ip-address thr)]
-      [(host thr) (vector 'tid (if (regexp-match ip-regexp (symbol->string host))
-                                   host
-                                   (string->symbol (dns-get-address dns (symbol->string host))))
-                          thr)]))
+      [(thr) (vector 'tid my-ip:port thr)]
+      [(port thr) (vector 'tid (string->symbol (format "~a:~a" ip-address port)) thr)]
+      [(host port thr) (vector 'tid
+                               (string->symbol
+                                (format
+                                 "~a:~a"
+                                 (if (regexp-match ip-regexp (symbol->string host))
+                                     host
+                                     (string->symbol (dns-get-address dns (symbol->string host))))
+                                 port))
+                               thr)]))
   
   (define (tid-ip tid)
     (vector-ref tid 1))
   
   (define (tid-lid tid)
     (vector-ref tid 2))
+  
+  (define (tid? x)
+    (and (vector? x)
+         (eq? (vector-ref x 0) 'tid)
+         (symbol? (vector-ref x 1))
+         (symbol? (vector-ref x 2))))
   
   ; We need a mapping from MzScheme's tids to our tids (just for `self')
   ; and a mapping from symbols to mailboxes (for local threads).
@@ -44,8 +97,8 @@
   
   (define mailboxes
     (make-hash-table))
-    
-  (define-struct mailbox (old-head old-last head tail sem-count lock-enqueue))
+  
+  (define-struct mailbox (old-head old-last head tail sem-count sem-space lock-enqueue))
   
   (define (try-extract m l)
     (let loop ([prev l] [cur (rest l)])
@@ -56,6 +109,7 @@
                 (loop cur (rest cur))
                 (begin
                   (set-rest! prev (rest cur))
+                  (release cur)
                   v))))))
   
   (define (receive-help timeout timeout-thunk matcher)
@@ -70,16 +124,18 @@
                        [wait-time (cond
                                     [(not timeout) false]
                                     [(> elapsed timeout) 0]
-                                    [else (/ (- timeout elapsed) 1000)])]
+                                    [else (/ (- timeout elapsed) 1000.0)])]
                        [val (object-wait-multiple wait-time (mailbox-sem-count mb))])
                   (if val
                       (let* ([oldhead (mailbox-head mb)]
                              [msg (first oldhead)]
                              [val (begin
                                     (set-mailbox-head! mb (rest oldhead))
+                                    (release oldhead)
+                                    (semaphore-post (mailbox-sem-space mb))
                                     (matcher msg))])
                         (if (eq? val match-fail)
-                            (let ([new-last (cons empty empty)]
+                            (let ([new-last (mcons empty empty)]
                                   [old-last (mailbox-old-last mb)])
                               (set-first! old-last msg)
                               (set-rest! old-last new-last)
@@ -101,7 +157,7 @@
   (define (spawn/name-help thunk name)
     (if (hash-table-get mailboxes name (lambda () #f))
         #f
-        (let ([new-tid (vector 'tid ip-address name)]
+        (let ([new-tid (make-tid name)]
               [parent-tid (self)])
           (thread
            (lambda ()
@@ -134,124 +190,131 @@
       [(_ name expr ...) (spawn/name-help (lambda () expr ...) name)]))
   
   (define (new-mailbox)
-    (let* ([sentinel (cons empty empty)]
-           [old-sentinel (cons empty empty)]
-           [old-head (cons empty old-sentinel)])
+    (let* ([sentinel (mcons empty empty)]
+           [old-sentinel (mcons empty empty)]
+           [old-head (mcons empty old-sentinel)])
       (make-mailbox old-head
                     old-sentinel
                     sentinel
                     sentinel
                     (make-semaphore)
+                    (make-semaphore 1000)
                     (make-semaphore 1))))
   
-  (define main (vector 'tid ip-address (string->symbol "main")))
+  (define main (make-tid 'main))
   (hash-table-put! tids (current-thread) main)
   (hash-table-put! mailboxes (tid-lid main) (new-mailbox))
   
   (define forward-mailbox (new-mailbox))
   
-  (define network-up? #f)
-  
-  ; forwarder
-  (define (start-network)
-    (if network-up?
-        #t
-        (with-handlers ([(lambda (exn) true) (lambda (exn)
-                                               (printf "failed to start network: ~a~n" exn) false)])
-          (let ([listener (tcp-listen 20000 4 #t #f)])
-            (thread
-             (lambda ()
-               (let* ([in-ports (make-hash-table)]
-                      [out-ports (make-hash-table)]
-                      [mk-wait-set (lambda () (apply waitables->waitable-set
-                                                     (hash-table-map in-ports (lambda (key val) val))))])
-             (let loop ([wait-set (mk-wait-set)])
-               (void "have connections to ~a~n" (hash-table-map in-ports (lambda (k v) k)))
-               (let ([val (object-wait-multiple #f (mailbox-sem-count forward-mailbox)
-                                                listener wait-set)])
-                 (cond
-                   [(tcp-listener? val)
-                    (let*-values ([(in-p out-p) (tcp-accept listener)]
-                                  [(local-ip remote-ip) (tcp-addresses out-p)])
-                      ; clean up eventually to handle near-simultaneous mutual connections
-                      ; (idea: use natural ordering on IP addresses to choose which connection survives)
-                      ; (also: need to close and remove dead ports)
-                      (hash-table-put! in-ports (string->symbol remote-ip) in-p)
-                      (hash-table-put! out-ports (string->symbol remote-ip) out-p)
-                      (loop (mk-wait-set)))]
-                   [(input-port? val)
-                    (with-handlers ([(lambda (exn) (or (exn:i/o:port? exn) (exn:read? exn)))
-                                     (lambda (exn) (printf "~a~n" exn) (loop wait-set))])
-                      (match (read val)
-                        [(lid msg)
-                         (let ([mb (hash-table-get mailboxes lid (lambda () false))])
-                           (when mb (send-msg mb msg))
-                           (loop wait-set))]
-                        [(? eof-object?)
-                         (let*-values ([(local-ip-str remote-ip-str) (tcp-addresses val)]
-                                       [(remote-ip) (string->symbol remote-ip-str)]
-                                       [(out-p) (hash-table-get out-ports remote-ip)])
-                           (close-input-port val)
-                           (close-output-port out-p)
-                           (hash-table-remove! in-ports remote-ip)
-                           (hash-table-remove! out-ports remote-ip)
-                           (loop (mk-wait-set)))]))] ; probably want to close port, remove from hash table
-                   [else ; val was the mailbox semaphore
-                    (match (first (mailbox-head forward-mailbox))
-                      ['quit (void)]
-                      [(#('tid ip lid) msg)
-                       (let ([out-p (hash-table-get
-                                     out-ports ip
+  (define (split-string-at str c)
+    (let loop ([i 0])
+      (if (char=? (string-ref str i) c)
+          (values (substring str 0 i) (substring str (add1 i)))
+          (loop (add1 i)))))
+
+  ; forwarder for remote communication
+  (thread
+   (lambda ()
+     (let* ([in-ports (make-hash-table)] ; set of input ports
+            [out-ports (make-hash-table)] ; symbol(ip:port) -> output port
+            [mk-wait-set (lambda () (apply waitables->waitable-set
+                                           (hash-table-map in-ports (lambda (key val) key))))]
+            [try-connect (lambda (ip:port)
+                           (with-handlers ([exn? (lambda (exn) (printf "~a~n" exn) false)])
+                             (let*-values ([(ip-str port-str) (split-string-at
+                                                               (symbol->string ip:port)
+                                                               #\:)]
+                                           [(in-p out-p)
+                                            (tcp-connect ip-str (string->number port-str))])
+                               (hash-table-put! in-ports in-p ip:port)
+                               (hash-table-put! out-ports ip:port out-p)
+                               (write (list my-ip:port) out-p)
+                               out-p)))])
+       (let loop ([wait-set (mk-wait-set)])
+         ;(printf "have connections to ~a~n" (hash-table-map in-ports (lambda (k v) k)))
+         (let ([val (object-wait-multiple #f (mailbox-sem-count forward-mailbox)
+                                          listener wait-set)])
+           (cond
+             [(tcp-listener? val)
+              (with-handlers ([exn? (lambda (exn) (loop wait-set))])
+                (let*-values ([(in-p out-p) (tcp-accept listener)]
+                              [(remote-ip:port) (first (read in-p))])
+                  (hash-table-put! out-ports remote-ip:port out-p)
+                  (hash-table-put! in-ports in-p remote-ip:port))
+                (loop (mk-wait-set)))]
+             [(input-port? val)
+              (match (with-handlers ([exn? (lambda (exn) (printf "~a~n" exn) eof)])
+                       (read val))
+                [(lid msg)
+                 ; forward to local mailbox
+                 (let ([mb (hash-table-get mailboxes lid (lambda () false))])
+                   (when mb (send-msg mb msg)))
+                 (loop wait-set)]
+                [(? eof-object?)
+                 ; close input port, remove from hash table
+                 (close-input-port val)
+                 (hash-table-remove! in-ports val)
+                 (loop (mk-wait-set))])]
+             [else ; val was the mailbox semaphore
+              (match (first (mailbox-head forward-mailbox))
+                ;['quit (void)]
+                [(#('tid ip:port lid) msg)
+                 (let inner ([out-p (hash-table-get
+                                     out-ports ip:port
                                      (lambda ()
-                                       (let-values ([(in-p out-p)
-                                                     (with-handlers ([exn:i/o:tcp? (lambda (dummy) (values #f #f))])
-                                                       (tcp-connect (symbol->string ip) 20000))])
-                                         (when out-p
-                                           (hash-table-put! in-ports ip in-p)
-                                           (hash-table-put! out-ports ip out-p)
-                                           (set! wait-set (mk-wait-set))
-                                           out-p))))])
-                         (when out-p
-                           (with-handlers ([exn:i/o:port? (lambda (exn) (printf "~a~n" exn))])
-                             (write (list lid msg) out-p)))
-                         (set-mailbox-head! forward-mailbox (rest (mailbox-head forward-mailbox)))
-                         (loop wait-set))])]))))))
-            (set! network-up? #t)
-            #t))))
-    
+                                       (begin0
+                                         (try-connect ip:port)
+                                         (set! wait-set (mk-wait-set)))))])
+                   (when out-p
+                     ; need to deal with closed ports here too
+                     (with-handlers ([exn:i/o:port:write?
+                                      (lambda (_)
+                                        (hash-table-remove! out-ports ip:port)
+                                        (let ([res (try-connect ip:port)])
+                                          (set! wait-set (mk-wait-set))
+                                          (inner res)))])
+                       (write (list lid msg) out-p))))
+                 (set-mailbox-head! forward-mailbox (rest (mailbox-head forward-mailbox)))
+                 (semaphore-post (mailbox-sem-space forward-mailbox))
+                 (loop wait-set)])]))))))
+  
+  #|
   (define (stop-network)
     (when network-up?
       (send-msg forward-mailbox 'quit)
       (set! network-up? #f)))
+  |#
   
   (define (local? tid)
-    (eq? (tid-ip tid) ip-address))
+    (symbol=? (tid-ip tid) my-ip:port))
   
   (define (! tid msg)
     (if (local? tid)
         (let ([mb (hash-table-get mailboxes (tid-lid tid) (lambda () false))])
           (when mb
             (send-msg mb msg)))
-        (when network-up?
-          (send-msg forward-mailbox (list tid msg))))) ; forward via special thread
+        (send-msg forward-mailbox (list tid msg)))) ; forward via special thread
   
   (define (send-msg mbox msg)
     (with-semaphore
      (mailbox-lock-enqueue mbox)
      (lambda ()
-        (let ([newtail (cons empty empty)]
-              [oldtail (mailbox-tail mbox)])
-          (set-first! oldtail msg)
-          (set-rest! oldtail newtail)
-          (set-mailbox-tail! mbox newtail)
-          (semaphore-post (mailbox-sem-count mbox))))))
-
+       (let ([newtail (mcons empty empty)]
+             [oldtail (mailbox-tail mbox)])
+         (set-first! oldtail msg)
+         (set-rest! oldtail newtail)
+         (set-mailbox-tail! mbox newtail)
+         (semaphore-wait (mailbox-sem-space mbox))
+         (semaphore-post (mailbox-sem-count mbox))))))
+  
   (define (self)
     (hash-table-get tids (current-thread)
+                    ; allows thread not created by spawn to receive messages
                     (lambda ()
                       (let* ([name (string->symbol
                                     (string-append "thread" (number->string (next-thread))))]
-                             [new-tid (vector 'tid ip-address name)])
+                             [new-tid (make-tid name)])
                         (hash-table-put! tids (current-thread) new-tid)
                         (hash-table-put! mailboxes name (new-mailbox))
                         new-tid))))
@@ -259,7 +322,7 @@
   (define (!! msg)
     (let ([mb (hash-table-get mailboxes (tid-lid (self)) (lambda () false))])
       (if mb
-          (let ([new-last (cons empty empty)]
+          (let ([new-last (mcons empty empty)]
                 [old-last (mailbox-old-last mb)])
             (set-first! old-last msg)
             (set-rest! old-last new-last)
@@ -269,15 +332,16 @@
     (hash-table-get mailboxes (self)))
   
   (provide
-;   mailboxes
-;   mybox
-;   (struct mailbox (old-head old-last channel))
+   ;   mailboxes
+   ;   mybox
+   ;   (struct mailbox (old-head old-last channel))
+   ; allocations
+   ; free-cons-cells
+   ; my-ip:port
    make-tid
+   tid?
    spawn
    spawn/name
-   start-network
-   stop-network
-   network-up?
    !
    !!
    receive

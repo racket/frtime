@@ -1,6 +1,7 @@
-(module demo3 (lib "animation.ss" "frtime")
+(module demo3 (lib "frtime.ss" "frtime")
   
-  (require (lib "math.ss"))
+  (require
+   (lib "animation.ss" "frtime"))
   
   (let* ([radius 100]
          [extra-count (keyboard-control 'up 'down 3)]

@@ -11,9 +11,11 @@ wraps the load of the module.)
 (module frtime-tool mzscheme
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
+           (lib "mred.ss" "mred")
            (lib "etc.ss")
            (lib "list.ss")
-	   (lib "tool.ss" "drscheme"))
+	   (lib "tool.ss" "drscheme")
+           (lib "string-constant.ss" "string-constants"))
   
   (provide tool@)
 
@@ -26,9 +28,9 @@ wraps the load of the module.)
 	  (define/public (get-language-numbers)
 	    '(1000 -400))
 	  (define/public (get-language-position)
-	    (list "Experimental Languages" "FrTime"))
+	    (list (string-constant experimental-languages) "FrTime"))
 	  (define/public (get-module)
-	    '(lib "frp.ss" "frtime"))
+	    '(lib "frtime.ss" "frtime"))
 	  (define/public (get-one-line-summary)
 	    "Language for reactive and time-dependent systems")
           (define/public (get-language-url) #f)
@@ -49,14 +51,7 @@ wraps the load of the module.)
                     [(weak-box-value (first lis)) => cmp]
                     [else false])
                   (loop (rest lis)))))))
-      
-      (define (clean-weak-list lis)
-        (if (empty? lis)
-            empty
-            (cond
-              [(weak-box-value (first lis)) (cons (first lis) (clean-weak-list (rest lis)))]
-              [else (clean-weak-list (rest lis))])))
-      
+            
       (define (watch watch-list value)
         (if (empty? watch-list)
             value
@@ -72,15 +67,18 @@ wraps the load of the module.)
           (field (watch-list empty))
 	  (rename [super-on-execute on-execute])
           (define/override (on-execute settings run-in-user-thread)
-            (super-on-execute settings run-in-user-thread)
-            (run-in-user-thread
-             (lambda ()
-               (let ([new-watch (namespace-variable-value 'watch)])
-                 (set! watch-list
-                       ((if (weak-member new-watch watch-list)
-                            identity
-                            (lambda (r) (cons (make-weak-box new-watch) r)))
-                        (clean-weak-list watch-list)))))))
+            (let ([drs-eventspace (current-eventspace)])
+              (super-on-execute settings run-in-user-thread)
+              (run-in-user-thread
+               (lambda ()
+                 (let ([new-watch (namespace-variable-value 'watch)]
+                       [set-evspc (namespace-variable-value 'set-eventspace)])
+                   (set-evspc drs-eventspace)
+                   (set! watch-list
+                         ((if (weak-member new-watch watch-list)
+                              identity
+                              (lambda (r) (cons (make-weak-box new-watch) r)))
+                          (filter weak-box-value watch-list))))))))
 
           (rename (super:render-value/format render-value/format)
                   (super:render-value        render-value))

@@ -1,21 +1,9 @@
-(module gui mzscheme
+(module gui (lib "frtime.ss" "frtime")
   (require
-   (lib "etc.ss")
+   (all-except (lib "etc.ss") rec)
    (lib "list.ss")
    (lib "class.ss")
-   (all-except (lib "mred.ss" "mred") send-event)
-   (all-except "frp.ss"
-               #%app
-               if
-               lambda
-               case-lambda
-               define
-               letrec
-	       and
-	       or
-	       cond
-	       rec)
-   (rename "frp.ss" frp:define define))
+   (all-except (lib "mred.ss" "mred") send-event))
   
   (define reactive-control<%>
     (interface (control<%>)
@@ -29,7 +17,7 @@
         ((null? list)
          '())
         (else
-         (cons (car list) (loop (cdr list) (- position 1)))))))
+         (cons (car list) (loop (cdr list) (sub1 position)))))))
   
   (define (reactive-control-mixin super)
     (class* super (reactive-control<%>)
@@ -128,7 +116,7 @@
 ;    (mixin (view<%>) (reactive-view<%>)
       (init-field
        (cell (new-cell undefined))
-       (updater (proc->behavior
+       (updater (proc->signal
 		 (lambda () (send this set-value (get-value cell)))
 		 undefined
                  cell)))
@@ -189,7 +177,7 @@
   (define (make-button str)
     (send (instantiate reactive-button% () (label str) (parent frame)) get-event))
   
-  (frp:define (make-message str~)
+  (define (make-message str~)
     (send (instantiate reactive-message% ()
             (label (if (undefined? (get-value str~))
                        ""
@@ -200,7 +188,7 @@
           set-behavior
           str~))
   
-  (frp:define (make-gauge rng val~)
+  (define (make-gauge rng val~)
     (send (instantiate reactive-gauge% ()
             (label "")
             (range rng)

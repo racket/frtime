@@ -1,4 +1,6 @@
-(module demo4 (lib "animation.ss" "frtime")
+(module demo4 (lib "frtime.ss" "frtime")
+  
+  (require (lib "animation.ss" "frtime"))
   
   ; the mouse position delayed
   (display-shapes

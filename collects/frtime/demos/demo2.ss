@@ -1,7 +1,8 @@
-(module demo2 (lib "animation.ss" "frtime")
+(module demo2 (lib "frtime.ss" "frtime")
   
-  (require (lib "math.ss")
-           (lib "gui.scm" "frtime"))
+  (require
+   (lib "animation.ss" "frtime")
+   (lib "gui.scm" "frtime"))
   
   (display-shapes
    (let* ([x-center 300]
@@ -12,7 +13,8 @@
           [hatch-frac 0.6]
           ;[crank (+ 150 (range-control (key #\C) (key #\c) 50))]
           [crank (make-slider "Crank length" 150 200 150)]
-          [piston-height (+ 20 (range-control (key #\P) (key #\p) 20))]
+          ;[piston-height (+ 20 (range-control (key #\P) (key #\p) 20))]
+          [piston-height (make-slider "Piston height" 20 40 20)]
           [piston-width 12]
           [gap (/ cylinder-width 6)]
           ;[speed (+ .5 (* .2 (range-control (key 'right) (key 'left) 10)))]

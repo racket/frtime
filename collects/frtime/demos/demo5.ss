@@ -1,4 +1,6 @@
-(module demo5 (lib "animation.ss" "frtime")
+(module demo5 (lib "frtime.ss" "frtime")
+  
+  (require (lib "animation.ss" "frtime"))
   
   (display-shapes
    (letrec ([pos (posn-integral vel)]

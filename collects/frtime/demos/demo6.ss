@@ -1,6 +1,8 @@
-(module demo6 (lib "animation.ss" "frtime")
+(module demo6 (lib "frtime.ss" "frtime")
   
-  (require (all-except (lib "match.ss") match))
+  (require
+   (lib "animation.ss" "frtime")
+   (all-except (lib "match.ss") match))
   
   (define remote-machine (new-cell 'krank.cs.brown.edu))
   
@@ -92,12 +94,14 @@
                                         nothing)])))
                          0)])
           (display-shapes
-           (list (make-circle pos1 10 "blue")
-                 (make-circle paddle1-pos paddle-radius "black")
-                 (make-circle paddle2-pos paddle-radius "black")
-                 (make-graph-string (make-posn 30 30) (number->string p2-score) "black")
-                 (make-graph-string (make-posn 350 30) (number->string p1-score) "black")
-                 (make-graph-string (make-posn 120 30) (number->string (posn-len vel1)) "black")
-                 (make-line (make-posn 0 150) (make-posn 0 250) "red")
-                 (make-line (make-posn 399 150) (make-posn 399 250) "red")))
+           (list 
+            (make-line (make-posn 200 0) (make-posn 200 399) "gray")
+            (make-circle pos1 10 "blue")
+            (make-circle paddle1-pos paddle-radius "black")
+            (make-circle paddle2-pos paddle-radius "black")
+            (make-graph-string (make-posn 30 30) (number->string p2-score) "black")
+            (make-graph-string (make-posn 350 30) (number->string p1-score) "black")
+            (make-graph-string (make-posn 120 30) (number->string (posn-len vel1)) "black")
+            (make-line (make-posn 0 150) (make-posn 0 250) "red")
+            (make-line (make-posn 399 150) (make-posn 399 250) "red")))
           pos1)))))
