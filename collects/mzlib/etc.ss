@@ -14,6 +14,8 @@
 	   
 	   loop-until
 	   
+           opt-lambda
+           
 	   local
 	   recur
 	   rec
@@ -125,7 +127,7 @@
 
  (define-syntax opt-lambda 
    (lambda (stx)
-     (with-syntax ([loop (or (syntax-local-name)
+     (with-syntax ([name (or (syntax-local-name)
 			     (quote-syntax opt-lambda-proc))])
        (syntax-case stx ()
 	 [(_ args body1 body ...)
@@ -138,10 +140,14 @@
 			      (with-syntax ([(pre-arg ...) pre-args])
 				(syntax ([(pre-arg ... . id)
 					  body1 body ...])))]
+                             [()
+			      (with-syntax ([(pre-arg ...) pre-args])
+				(syntax ([(pre-arg ...)
+					  body1 body ...])))]
 			     [(id . rest)
 			      (identifier? (syntax id))
 			      (begin
-				(unless needs-default?
+				(when needs-default?
 				  (raise-syntax-error
 				   'opt-lambda
 				   "default value missing"
@@ -152,12 +158,12 @@
 				      #f))]
 			     [([id default] . rest)
 			      (identifier? (syntax id))
-			      (with-syntax ([rest (loop (append pre-args (list (syntax id)))
-							(syntax rest)
-							#t)]
-					    [(pre-arg ...) pre-args])
-				(syntax ([(pre-arg ...) (name pre-arg ... default)]
-					 . rest)))]
+                              (with-syntax ([rest (loop (append pre-args (list (syntax id)))
+                                                        (syntax rest)
+                                                        #t)]
+                                            [(pre-arg ...) pre-args])
+                                (syntax ([(pre-arg ...) (name pre-arg ... default)]
+                                         . rest)))]
 			     [(bad . rest)
 			      (raise-syntax-error
 			       'opt-lambda
@@ -170,11 +176,12 @@
 			       "bad identifier sequence"
 			       stx
 			       (syntax args))]))])
-	    (syntax/loc stx
-			(letrec ([loop
-				  (case-lambda
-				   . clauses)])
-			  loop)))]))))
+            (with-syntax ([clauses clauses])
+              (syntax/loc stx
+                          (letrec ([name
+                                    (case-lambda
+                                     . clauses)])
+                            name))))]))))
  
  (define-syntax local 
    (lambda (stx)
