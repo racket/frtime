@@ -249,7 +249,9 @@
            current-continuation-marks
            raise-mismatch-error require-for-syntax define-syntax syntax-rules syntax-case
            set-eventspace
+	   install-errortrace-key
            (lifted:nonstrict apply format list list*)
+           general-event-processor
            lambda
            case-lambda
            define-values
@@ -306,7 +308,10 @@
            frtime-version
            raise-exceptions
            synchronize
+           frp:send
            snapshot
+           snapshot-all
+           snapshot/sync
            snapshot/apply
            )
            
@@ -325,7 +330,8 @@
   ; on values that may actually change and should be monitored
   ; for change
   (define (value-nowable? v)
-    (not (and (signal? v) (event-cons? (signal-value v)))))
+    #t)
+    ;(not (and (signal? v) (event-cons? (signal-value v)))))
 
   (provide/contract
    [proc->signal (((-> any/c))
@@ -336,7 +342,7 @@
 
    [until (value-nowable? value-nowable? . -> . behavior?)]
 
-   [switch ((event?) (value-nowable?) . opt-> . behavior?)]
+   [switch ((event?) (value-nowable?) . opt-> . signal?)]
 
    [merge-e (() (listof event?) . ->* . (event?))]
 
@@ -393,7 +399,7 @@
 
    [integral ((value-nowable?) (value-nowable?) . opt-> . behavior?)]
 
-   [delay-by (value-nowable? value-nowable? . -> . behavior?)]
+   [delay-by (value-nowable? value-nowable? . -> . signal?)]
    
    [inf-delay (value-nowable? . -> . behavior?)]
    
