@@ -151,7 +151,7 @@
 			      (begin
 				(when needs-default?
 				  (raise-syntax-error
-				   'opt-lambda
+				   #f
 				   "default value missing"
 				   stx
 				   (syntax id)))
@@ -168,13 +168,13 @@
                                          . rest)))]
 			     [(bad . rest)
 			      (raise-syntax-error
-			       'opt-lambda
+			       #f
 			       "not an identifier or identifier with default"
 			       stx
 			       (syntax bad))]
 			     [else
 			      (raise-syntax-error
-			       'opt-lambda
+			       #f
 			       "bad identifier sequence"
 			       stx
 			       (syntax args))]))])
@@ -202,20 +202,20 @@
 			     (lambda (id)
 			       (unless (identifier? id)
 				 (raise-syntax-error
-				  'local
+				  #f
 				  "not an identifier for definition"
 				  stx
 				  id)))
 			     (syntax->list (syntax (id ...))))]
 			   [(define-values . rest)
 			    (raise-syntax-error
-			     'local
+			     #f
 			     "ill-formed definition"
 			     stx
 			     d)]
 			   [_else
 			    (raise-syntax-error
-			     'local
+			     #f
 			     "not a definition"
 			     stx
 			     defn)])
@@ -231,7 +231,7 @@
 	    (let ([dup (check-duplicate-identifier ids)])
 	      (when dup
 		(raise-syntax-error
-		 'local
+		 #f
 		 "duplicate identifier"
 		 stx
 		 dup)))
@@ -245,7 +245,7 @@
 		   body ...))))))]
        [(_ x body1 body ...)
 	(raise-syntax-error
-	 'local
+	 #f
 	 "not a definition sequence"
 	 stx
 	 (syntax x))])))
@@ -265,7 +265,7 @@
 	(begin
 	  (unless (identifier? (syntax name))
 	    (raise-syntax-error
-	     'rec
+	     #f
 	     "not an identifier"
 	     stx
 	     (syntax name)))
@@ -293,7 +293,7 @@
 		  (when (and (identifier? (car tests))
 			     (module-identifier=? (quote-syntax else) (car tests)))
 		    (raise-syntax-error
-		     'evcase
+		     #f
 		     "else is not in last clause"
 		     stx
 		     (car tests)))
@@ -311,7 +311,7 @@
 	   (syntax-case s ()
 	     [(t a ...)
 	      (raise-syntax-error
-	       'evcase
+	       #f
 	       "invalid clause"
 	       stx
 	       s)]))
@@ -336,7 +336,7 @@
 	(let ([clauses (syntax->list (syntax (clause ...)))]
 	      [bad (lambda (c n)
 		     (raise-syntax-error
-		      'let+
+		      #f
 		      (format "illegal use of ~a for a clause" n)
 		      stx
 		      c))]
@@ -376,7 +376,7 @@
 	       [(vals . __) (bad clause "vals")]
 	       [(recs . __) (bad  clause"recs")]
 	       [(_ . __) (bad clause "_")]
-	       [_else (raise-syntax-error 'let+ "bad clause" stx clause)]))
+	       [_else (raise-syntax-error #f "bad clause" stx clause)]))
 	   clauses)
 	  ;; result
 	(let loop ([clauses clauses])
