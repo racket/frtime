@@ -29,7 +29,9 @@
 
 	   namespace-defined?
 	   this-expression-source-directory
-	   define-syntax-set)
+	   define-syntax-set
+           
+           hash-table)
   
   (define true #t)
   (define false #f)
@@ -488,4 +490,12 @@
 	(with-syntax ([orig-stx stx])
 	  (syntax/loc stx
 	    (define-syntaxes (id ...)
-	      (finish-syntax-set orig-stx)))))])))
+	      (finish-syntax-set orig-stx)))))]))
+  
+  (define-syntax (hash-table stx)
+    (syntax-case stx ()
+      [(_ (key value) ...)
+       (syntax/loc stx
+         (let ([ht (make-hash-table)])
+           (hash-table-put! ht key value) ...
+           ht))])))
