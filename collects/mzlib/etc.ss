@@ -424,12 +424,12 @@
 		  [(_ expr0 expr ...)
 		   (syntax (begin expr0 expr ... rest))])))))])))
 
+ (define ns-undefined (gensym))
+
  (define (namespace-defined? n)
    (unless (symbol? n)
      (raise-type-error 'namespace-defined? "symbol" n))
-   (with-handlers ([exn:variable? (lambda (x) #f)])
-     (namespace-variable-binding n)
-     #t))
+   (not (eq? (namespace-variable-value n #t (lambda () ns-undefined)) ns-undefined)))
 
  (define-syntax (this-expression-source-directory stx)
    (syntax-case stx ()
