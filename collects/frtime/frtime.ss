@@ -394,6 +394,8 @@
 
    [delay-by (value-nowable? value-nowable? . -> . behavior?)]
    
+   [inf-delay (value-nowable? . -> . behavior?)]
+   
    [bind (symbol? event? . -> . event?)]
    
    [remote-reg (tid? symbol? . -> . event?)]

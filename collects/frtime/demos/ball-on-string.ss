@@ -2,7 +2,7 @@
 
 (define-values (pos vel)
  (letrec ([pos (posn-integral vel)]
-          [vel (posn/ (posn- mouse-pos pos) 400.0)])
+          [vel (posn/ (posn- mouse-pos (inf-delay pos)) 400.0)])
    (values pos vel)))
 
 (display-shapes

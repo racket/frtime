@@ -44,7 +44,7 @@
   (until (make-posn 200 200)
          (if follow-mouse?
              (posn- mouse-pos offset)
-             clock-center)))
+             (inf-delay clock-center))))
 
 ;; Define the length of the hands in terms of the radius of the clock.
 (define second-hand-length (- clock-radius 5))
