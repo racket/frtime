@@ -1,10 +1,12 @@
 
 (module etc mzscheme
-  (require "spidey.ss")
+  (require "spidey.ss"
+           (lib "plthome.ss" "setup"))
   (require-for-syntax (lib "kerncase.ss" "syntax")
 		      (lib "stx.ss" "syntax")
 		      (lib "name.ss" "syntax")
 		      (lib "context.ss" "syntax")
+		      (lib "plthome.ss" "setup")
 		      "private/stxset.ss")
 
   (provide true false
@@ -438,28 +440,23 @@
  (define-syntax (this-expression-source-directory stx)
    (syntax-case stx ()
      [(_)
-      (let ([source (syntax-source stx)]
-	    [local (lambda ()
-		     (let ([s (or (current-load-relative-directory)
-				  (current-directory))])
-		       (datum->syntax-object
-			(quote-syntax 'here)
-			s
-			stx)))])
-	(if (and source
-		 (string? source)
-		 (file-exists? source))
-	    (let-values ([(base file dir?) (split-path source)])
-	      (cond
-	       [(string? base)
-		(with-syntax ([base (path->complete-path 
-				     base
-				     (or (current-load-relative-directory)
-					 (current-directory)))])
-		  (syntax base))]
-	       [else ; must be (eq? base 'relative)
-		(local)]))
-	    (local)))]))
+      (let* ([source (syntax-source stx)]
+	     [local (lambda ()
+		      (or (current-load-relative-directory)
+			  (current-directory)))]
+	     [dir (plthome-ify
+                   (or (and source (string? source) (file-exists? source)
+                            (let-values ([(base file dir?) (split-path source)])
+                              (and (string? base)
+                                   (path->complete-path
+                                    base
+                                    (or (current-load-relative-directory)
+                                        (current-directory))))))
+                       (local)))])
+        (if (and (pair? dir) (eq? 'plthome (car dir)))
+          (with-syntax ([d dir])
+            (syntax (un-plthome-ify 'd)))
+          (datum->syntax-object (quote-syntax here) dir stx)))]))
 
  ;; This is a macro-generating macro that wants to expand
  ;; expressions used in the generated macro. So it's weird,
