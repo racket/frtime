@@ -324,31 +324,44 @@
 		      'let+
 		      (format "illegal use of ~a for a clause" n)
 		      stx
-		      c))])
+		      c))]
+	      [var? (lambda (x)
+		      (or (identifier? x)
+			  (let ([l (syntax->list x)])
+			    (and l
+				 (pair? l)
+				 (eq? (syntax-e (car l)) 'values)
+				 (andmap identifier? (cdr l))))))]
+	      [normal-var (lambda (x)
+			    (if (identifier? x)
+				(list x)
+				(cdr (syntax-e x))))])
 	  ;; syntax checks
 	  (for-each
 	   (lambda (clause)
-	     (syntax-case clause (val rec vals recs _)
-		  [(val var expr)
-		   (identifier? (syntax var))
-		   'ok]
-		  [(rec var expr)
-		   (identifier? (syntax var))
-		   'ok]
-		  [(vals (var expr) ...)
-		   (andmap identifier? (syntax->list (syntax (var ...))))
-		   'ok]
-		  [(recs (var expr) ...)
-		   (andmap identifier? (syntax->list (syntax (var ...))))
-		   'ok]
-		  [(_ expr)
-		   'ok]
-		  [(val . _) (bad clause "val")]
-		  [(rec . _) (bad clause "rec")]
-		  [(vals . _) (bad clause "vals")]
-		  [(recs . _) (bad  clause"recs")]
-		  [(_ . _) (bad clause "_")]
-		  [_else (raise-syntax-error 'let+ "bad clause" stx clause)]))
+	     (syntax-case* clause (val rec vals recs _) (lambda (a b) 
+							  (eq? (syntax-e b) 
+							       (syntax-e a)))
+	       [(val var expr)
+		(var? (syntax var))
+		'ok]
+	       [(rec var expr)
+		(var? (syntax var))
+		'ok]
+	       [(vals (var expr) ...)
+		(andmap var? (syntax->list (syntax (var ...))))
+		'ok]
+	       [(recs (var expr) ...)
+		(andmap var? (syntax->list (syntax (var ...))))
+		'ok]
+	       [(_ expr)
+		'ok]
+	       [(val . _) (bad clause "val")]
+	       [(rec . _) (bad clause "rec")]
+	       [(vals . _) (bad clause "vals")]
+	       [(recs . _) (bad  clause"recs")]
+	       [(_ . _) (bad clause "_")]
+	       [_else (raise-syntax-error 'let+ "bad clause" stx clause)]))
 	   clauses)
 	  ;; result
 	(let loop ([clauses clauses])
@@ -357,13 +370,17 @@
 	      (with-syntax ([rest (loop (cdr clauses))])
 		(syntax-case (car clauses) (val rec vals recs _)
 		  [(val var expr)
-		   (syntax (let ([var expr]) rest))]
+		   (with-syntax ([vars (normal-var (syntax var))])
+		     (syntax (let-values ([vars expr]) rest)))]
 		  [(rec var expr)
-		   (syntax (letrec ([var expr]) rest))]
+		   (with-syntax ([vars (normal-var (syntax var))])
+		     (syntax (letrec-values ([vars expr]) rest)))]
 		  [(vals (var expr) ...)
-		   (syntax (let ([var expr] ...) rest))]
+		   (with-syntax ([(vars ...) (map normal-var (syntax->list (syntax (var ...))))])
+		     (syntax (let-values ([vars expr] ...) rest)))]
 		  [(recs (var expr) ...)
-		   (syntax (letrec ([var expr] ...) rest))]
+		   (with-syntax ([(vars ...) (map normal-var (syntax->list (syntax (var ...))))])
+		     (syntax (letrec-values ([vars expr] ...) rest)))]
 		  [(_ expr)
 		   (syntax (begin expr rest))])))))])))
 
