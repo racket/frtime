@@ -193,6 +193,7 @@
 		     (lambda (defn)
 		       (let ([d (local-expand
 				 defn
+				 'internal-define
 				 (kernel-form-identifier-list 
 				  (quote-syntax here)))])
 			 (syntax-case d (define-values)
