@@ -92,8 +92,9 @@
 ;; The clock face is a blue circle and a the numbers around its edge.
 (define clock-face
   (list (make-circle clock-center clock-radius (if follow-mouse?
-                                                   "lightgreen"
-                                                   "lightblue"))
+                                                   "lightblue"
+                                                   "white"))
+        (make-circle clock-center (/ clock-radius 20) "black")
         (make-ring clock-center clock-radius "blue")
         (build-list 12 create-number)))
 

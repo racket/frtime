@@ -1,10 +1,11 @@
-(module ball-on-string (lib "frtime.ss" "frtime")
-  
-  (require (lib "animation.ss" "frtime"))
-  
-  (display-shapes
-   (letrec ([pos (posn-integral vel)]
-            [vel (posn/ (posn- mouse-pos pos) 400.0)])
-     (list
-      (make-line mouse-pos pos "gray")
-      (make-circle pos (+ 10 (/ 400 (+ 40.0 (posn-diff mouse-pos pos)))) "blue")))))
+(require (lib "animation.ss" "frtime"))
+
+(define-values (pos vel)
+ (letrec ([pos (posn-integral vel)]
+          [vel (posn/ (posn- mouse-pos pos) 400.0)])
+   (values pos vel)))
+
+(display-shapes
+ (list
+  (make-line mouse-pos pos "gray")
+  (make-circle pos (+ 10 (/ 400 (+ 40.0 (posn-diff mouse-pos pos)))) "blue")))

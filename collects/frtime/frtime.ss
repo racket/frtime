@@ -135,6 +135,9 @@
       [(f l) (if (pair? l)
                  (cons (f (car l)) (map f (cdr l)))
                  null)]
+      [(f l1 l2) (if (and (pair? l1) (pair? l2))
+                     (cons (f (car l1) (car l2)) (map f (cdr l1) (cdr l2)))
+                     null)]
       [(f l . ls) (if (and (pair? l) (andmap pair? ls))
                       (cons (lift #f apply f (car l) (map car ls)) (lift #f apply map f (cdr l) (map cdr ls)))
                       null)]))
