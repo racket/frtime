@@ -184,12 +184,6 @@
           (apply proc->signal (lambda () arg-behs vec) arg-behs))
         (apply vector args)))
 
-  (define-syntax snapshot
-    (syntax-rules ()
-      [(_ (id ...) expr ...)
-       (let ([id (value-now id)] ...)
-         expr ...)]))
-  
   (define ((behaviorof pred) x)
     (let ([v (value-now x)])
       (or (undefined? v)
@@ -287,6 +281,7 @@
            frtime-version
            raise-exceptions
            synchronize
+           snapshot
            snapshot/apply
            )
            
@@ -297,7 +292,7 @@
   (provide when unless behaviorof -=> nothing nothing?
            cond and or andmap ormap map
            caar cadr cdar cddr caddr cdddr cadddr cddddr
-           snapshot)
+           magic)
 
   ; returns true on values that can be passed to value-now
   ; (e.g. behaviors or constants)
