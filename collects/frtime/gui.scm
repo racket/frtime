@@ -205,11 +205,13 @@
   (define (make-slider str min max init)
     (make-control-behavior (instantiate reactive-slider-1d% () (label str)
                              (min-value min) (max-value max) (parent frame)
+                             (init-value init)
                              ;(style (list 'plain 'horizontal))
                              )))
   
   (define (make-check-box str)
-    (make-control-behavior (instantiate reactive-check-box% () (label str) (parent frame))))
+    (make-control-behavior (instantiate reactive-check-box% ()
+                             (label str) (parent frame))))
   
   (define fresh-window
     (let ([first #t])

@@ -284,29 +284,34 @@
            cond and or andmap ormap map
            caar cadr cdar cddr caddr cdddr cadddr cddddr)
 
-  (define (non-event? v)
-    (not (event? v)))
+  ; returns true on values that can be passed to value-now
+  ; (e.g. behaviors or constants)
+  ; note difference from behavior?, which returns true only
+  ; on values that may actually change and should be monitored
+  ; for change
+  (define (value-nowable? v)
+    (not (and (signal? v) (event-cons? (signal-value v)))))
 
   (provide/contract
    [proc->signal (((-> void?))
                   any?
                   . ->* . (signal?))]
 
-   [value-now (any? . -> . any)]
+   [value-now (value-nowable? . -> . any)]
 
-   [until (any? any? . -> . behavior?)]
+   [until (value-nowable? value-nowable? . -> . behavior?)]
 
-   [switch (any? event? . -> . behavior?)]
+   [switch (value-nowable? event? . -> . behavior?)]
 
    [merge-e (() (listof event?) . ->* . (event?))]
 
    [once-e (event? . -> . event?)]
 
-   [changes (any? . -> . event?)]
+   [changes (value-nowable? . -> . event?)]
 
    [event-receiver (-> event?)]
 
-   [when-e (any? . -> . event?)]
+   [when-e (value-nowable? . -> . event?)]
 
    [==> (event? (any? . -> . any) . -> . event?)]
 
@@ -332,9 +337,9 @@
 
    [hold ((event?) (any?) . opt-> . behavior?)]
 
-   [new-cell (() (any?) . opt-> . behavior?)]
+   [new-cell (() (value-nowable?) . opt-> . behavior?)]
 
-   [set-cell! (behavior? any? . -> . void?)]
+   [set-cell! (behavior? value-nowable? . -> . void?)]
 
    [snapshot-e ((event?) any? . ->* . (event?))]
 
@@ -343,10 +348,10 @@
                     . ->* . 
                     (event?))]
 
-   [derivative (any? . -> . behavior?)]
+   [derivative (value-nowable? . -> . behavior?)]
 
-   [integral ((any?) (any?) . opt-> . behavior?)]
+   [integral ((value-nowable?) (value-nowable?) . opt-> . behavior?)]
 
-   [delay-by (any? any? . -> . any?)]
+   [delay-by (value-nowable? value-nowable? . -> . behavior?)]
 
    ))

@@ -6,7 +6,7 @@
            (lib "list.ss" "frtime")
            (lib "etc.ss" "frtime")
            (lifted (lib "math.ss") sqr)
-           (as-is (lib "math.ss") pi)
+           (as-is/unchecked (lib "math.ss") pi)
            (as-is mzscheme sleep))
   
   (open-graphics)
@@ -97,8 +97,8 @@
          (* 2 radius)
          color)]
        [($ solid-ellipse ul w h color)
-        (when (not (ormap undefined? (list ul w h color)))
-          ((draw-solid-ellipse pixmap) ul w h color))]
+;        (when (not (ormap undefined? (list ul w h color)))
+          ((draw-solid-ellipse pixmap) ul w h color)]
        [($ graph-string pos text color) ((draw-string pixmap) pos text color)]
        [($ line p1 p2 color) ((draw-line pixmap) p1 p2 color)]
        [($ rect ul w h color)

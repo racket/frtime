@@ -13,7 +13,7 @@
            "erl.ss"
            (rename "frp.ss" event-receiver event-receiver)
            (rename "frp.ss" frp-man man)
-           (rename "frp.ss" make-external-event make-external-event)
+           (rename "frp.ss" send-event send-event)
 	   "graphics-sig.ss")
   (provide graphics-posn-less@)
 
@@ -115,19 +115,19 @@
 		 [sixm (make-sixmouse x y left? middle? right?)])
             (set! current-mouse-pos (make-posn x y))
             (if mouse-listener
-                (! frp-man (make-external-event sixm mouse-listener)))))]
+                (send-event mouse-listener sixm))))]
        
        [on-char
 	(lambda (key-event)
           (if key-listener
-              (! frp-man (make-external-event
-                          (make-sixkey
-                           (send key-event get-key-code)
-                           (send key-event get-shift-down)
-                           (send key-event get-control-down)
-                           (send key-event get-meta-down)
-                           (send key-event get-alt-down))
-                          key-listener))))])
+              (send-event
+               key-listener
+               (make-sixkey
+                (send key-event get-key-code)
+                (send key-event get-shift-down)
+                (send key-event get-control-down)
+                (send key-event get-meta-down)
+                (send key-event get-alt-down)))))])
 
       (public
 	[set-dc (lambda (new-dc) (set! dc new-dc))]
