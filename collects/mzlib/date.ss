@@ -133,7 +133,7 @@
                                 (case (date-month date)
                                   [(1) "Januar"]
                                   [(2) "Februar"]
-                                  [(3) "März"]
+                                  [(3) "M\344rz"]
                                   [(4) "April"]
                                   [(5) "Mai"]
                                   [(6) "Juni"]
