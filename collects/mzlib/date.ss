@@ -291,7 +291,7 @@
 	    (cond
 	     [(eq? compare 'equal) secs]
 	     [(or (= secs below-secs) (= secs above-secs))
-	      (signal-error "non-existant date")]
+	      (signal-error "non-existent date")]
 	     [(eq? compare 'input-smaller) 
 	      (loop below-secs (floor (/ (+ secs below-secs) 2)) secs)]
 	     [(eq? compare 'test-smaller) 
