@@ -20,6 +20,8 @@
                        cond when unless
                        map ormap andmap assoc member)
            (rename mzscheme mz:cons cons)
+           ;(rename mzscheme mz:and and)
+           ;(rename mzscheme mz:or or)
            ;(lib "list.ss")
            (lib "contract.ss")
            (rename "erl.ss" tid? tid?))
@@ -34,21 +36,21 @@
       [(_ [test => result] clause1 clause2 ...)
        (let ([temp test])
          (if temp
-                 (result temp)
-                 (cond clause1 clause2 ...)))]
+             (result temp)
+             (cond clause1 clause2 ...)))]
       [(_ [test]) test]
       [(_ [test] clause1 clause2 ...)
        (let ((temp test))
          (if temp
-                 temp
-                 (cond clause1 clause2 ...)))]
+             temp
+             (cond clause1 clause2 ...)))]
       [(_ [test result1 result2 ...])
        (if test (begin result1 result2 ...))]
       [(_ [test result1 result2 ...]
           clause1 clause2 ...)
        (if test
-               (begin result1 result2 ...)
-               (cond clause1 clause2 ...))]))
+           (begin result1 result2 ...)
+           (cond clause1 clause2 ...))]))
   
   (define-syntax and
     (syntax-rules ()
