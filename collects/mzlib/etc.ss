@@ -439,7 +439,10 @@
 	    (let-values ([(base file dir?) (split-path source)])
 	      (cond
 	       [(string? base)
-		(with-syntax ([base base])
+		(with-syntax ([base (path->complete-path 
+				     base
+				     (or (current-load-relative-directory)
+					 (current-directory)))])
 		  (syntax base))]
 	       [else ; must be (eq? base 'relative)
 		(local)]))
