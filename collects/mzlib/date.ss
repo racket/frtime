@@ -129,7 +129,22 @@
 		 (values (list day "-" num-month "-" year)
 			 (list " " hour12 ":" minute ":" second am-pm))]
 		[(german) 
-		 (values (list day ". " month " " year)
+		 (values (list day ". " 
+                                (case (date-month date)
+                                  [(1) "Januar"]
+                                  [(2) "Februar"]
+                                  [(3) "März"]
+                                  [(4) "April"]
+                                  [(5) "Mai"]
+                                  [(6) "Juni"]
+                                  [(7) "Juli"]
+                                  [(8) "August"]
+                                  [(9) "September"]
+                                  [(10) "Oktober"]
+                                  [(11) "November"]
+                                  [(12) "Dezember"]
+                                  [else ""])
+                                " " year)
 			 (list ", " hour24 "." minute))]
 		[(irish) 
 		 (values (list week-day ", " day day-th " " month " " year)
