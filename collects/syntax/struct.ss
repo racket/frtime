@@ -3,6 +3,7 @@
   
   (provide build-struct-names
 	   build-struct-generation
+	   build-struct-expand-info
 	   struct-declaration-info?)
 
   ;; build-struct-names : id (list-of id) bool bool -> (list-of id)
@@ -60,6 +61,40 @@
 		     make-
 		     ?
 		     ,@acc/mut-makers))))))
+
+  (define build-struct-expand-info
+    (lambda (name-stx fields omit-sel? omit-set? base-getters base-setters)
+      (let* ([names (build-struct-names name-stx fields omit-sel? omit-set?)]
+	     [flds (cdddr names)]
+	     [every-other (lambda (l)
+			    (let loop ([l l])
+			      (cond
+			       [(null? l) null]
+			       [(null? (cdr l)) (list (car l))]
+			       [else (cons (car l) (loop (cddr l)))])))]
+	     [add-#f (lambda (omit? base)
+		       (if omit?
+			   (if (let loop ([l base])
+				 (cond
+				  [(null? l) #t]
+				  [(not (car l)) #f]
+				  [else (loop (cdr l))]))
+			       (append base '(#f)))
+			   base))]
+	     [qs (lambda (x) (and x `(quote-syntax ,x)))])
+	`(list-immutable
+	  ,(qs (car names))
+	  ,(qs (cadr names))
+	  ,(qs (caddr names))
+	  (list-immutable 
+	   ,@(map qs (every-other fields))
+	   ,@(map qs (add-#f omit-sel? base-getters)))
+	  (list-immutable 
+	   ,@(map qs (every-other (if (null? fields)
+				      null
+				      (cdr fields))))
+	   ,@(map qs (add-#f omit-set? base-setters)))))))
+
 
   (define (struct-declaration-info? x)
     (define (identifier/#f? x)

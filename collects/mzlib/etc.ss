@@ -2,7 +2,8 @@
 (module etc mzscheme
   (require "spidey.ss")
   (require-for-syntax (lib "kerncase.ss" "syntax")
-		      (lib "stx.ss" "syntax"))
+		      (lib "stx.ss" "syntax")
+		      "private/stxset.ss")
 
   (provide true false
 	   boolean=? symbol=?
@@ -434,41 +435,35 @@
 	    (syntax (or (current-load-relative-directory)
 			(current-directory)))))]))
 
+ ;; This is a macro-generating macro that wants to expand
+ ;; expressions used in the generated macro. So it's weird,
+ ;; and we put much of the work in a helper macro,
+ ;; `finish-syntax-set'.
  (define-syntax (define-syntax-set stx)
-    (syntax-case stx ()
-      [(_ (id ...) defn ...)
-       (let ([ids (syntax->list (syntax (id ...)))])
-	 ;; Check ids ------------------------------
-	 (for-each (lambda (id)
-		     (unless (identifier? id)
-		       (raise-syntax-error
-			#f
-			"not an identifier or two identifier in parentheses"
-			stx
-			id)))
-		   ids)
-	 (let ([dup (check-duplicate-identifier ids)])
-	     (when dup
-	       (raise-syntax-error
-		#f
-		"duplicate identifier"
-		stx
-		dup)))
-	 (let ([internal-ids (map (lambda (id)
-				    (datum->syntax-object
-				     id
-				     (string->symbol (format "~a/proc" (syntax-e id)))
-				     id))
-				  ids)])
-	   
-	   
-	   ;; We'd like to check the `defns', but that requires
-	   ;; and expansion in a different phase. So we punt for now.
-	   
-	   ;; Produce result ------------------------------
-	   (with-syntax ([(int-id ...) internal-ids])
-	     (syntax/loc stx
-	       (define-syntaxes (id ...)
-		 (let ()
-		   defn ...
-		   (values int-id ...)))))))])))
+   (syntax-case stx ()
+     [(_ (id ...) defn ...)
+      (let ([ids (syntax->list (syntax (id ...)))])
+	;; Check ids ------------------------------
+	(for-each (lambda (id)
+		    (unless (identifier? id)
+		      (raise-syntax-error
+		       #f
+		       "not an identifier or two identifier in parentheses"
+		       stx
+		       id)))
+		  ids)
+	(let ([dup (check-duplicate-identifier ids)])
+	  (when dup
+	    (raise-syntax-error
+	     #f
+	     "duplicate identifier"
+	     stx
+	     dup)))
+
+	;; We'd like to check the `defns', but that requires
+	;; and expansion in a different phase. So we move
+	;; into that phase using `finish-syntax-set':
+	(with-syntax ([orig-stx stx])
+	  (syntax/loc stx
+	    (define-syntaxes (id ...)
+	      (finish-syntax-set orig-stx)))))])))
