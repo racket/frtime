@@ -4,24 +4,23 @@
   (require-for-syntax (lib "kerncase.ss" "syntax"))
 
   (provide true false
-	  boolean=? symbol=?
-	  char->string
-	  identity
-	  compose
-
-	  build-string
-	  build-vector
-	  build-list
-
-	  loop-until
-
-	  local
-	  recur
-	  rec
-	  evcase
-	  nor
-	  nand
-	  let+)
+	   boolean=? symbol=?
+	   identity
+	   compose
+	   
+	   build-string
+	   build-vector
+	   build-list
+	   
+	   loop-until
+	   
+	   local
+	   recur
+	   rec
+	   evcase
+	   nor
+	   nand
+	   let+)
 
   (define true #t)
   (define false #f)
@@ -124,12 +123,6 @@
 			(if (symbol? x) y x)))
     (eq? x y))
 
-  (define (char->string c)
-    (unless (char? c)
-      (raise-type-error 'char->string "character" c))
-    (string c))
-
- 
  (define-syntax opt-lambda 
    (lambda (stx)
      (with-syntax ([loop (or (syntax-local-name)
