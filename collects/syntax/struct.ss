@@ -1,5 +1,6 @@
 
 (module struct mzscheme
+  (require (lib "etc.ss"))
   
   (provide build-struct-names
 	   build-struct-generation
@@ -8,12 +9,12 @@
 
   ;; build-struct-names : id (list-of id) bool bool -> (list-of id)
   (define build-struct-names
-    (lambda (name-stx fields omit-sel? omit-set?)
+    (opt-lambda (name-stx fields omit-sel? omit-set? [srcloc-stx #f])
       (let ([name (symbol->string (syntax-e name-stx))]
 	    [fields (map symbol->string (map syntax-e fields))]
 	    [+ string-append])
 	(map (lambda (s)
-	       (datum->syntax-object name-stx (string->symbol s) #f))
+	       (datum->syntax-object name-stx (string->symbol s) srcloc-stx))
 	     (append
 	      (list 
 	       (+ "struct:" name)
