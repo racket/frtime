@@ -1,8 +1,8 @@
 (module list (lib "frtime.ss" "frtime")
   
-  (require (lift/strict (lib "list.ss")
-                        first second third fourth fifth sixth seventh eighth
-                        last-pair rest empty? cons?)
+  (require (lifted (lib "list.ss")
+                   first second third fourth fifth sixth seventh eighth
+                   last-pair rest empty? cons?)
            (as-is (lib "list.ss") empty))
   
   (define remove

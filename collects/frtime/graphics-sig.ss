@@ -9,7 +9,7 @@
   (define-signature graphics:posn-less^
     (viewport?
 
-     sixkey-value
+     sixkey-value sixkey-shift sixkey-control sixkey-meta sixkey-alt
      
      sixmouse-x sixmouse-y sixmouse-left? sixmouse-middle? sixmouse-right?
      sixmouse?

@@ -33,7 +33,7 @@
   
   (define-struct viewport (label canvas))
   (define-struct sixmouse (x y left? middle? right?))
-  (define-struct sixkey (value))
+  (define-struct sixkey (value shift control meta alt))
   (define graphics-flag #f)
   (define global-viewport-list '())
   (define global-color-vector (make-vector 300 #f))
@@ -122,7 +122,11 @@
           (if key-listener
               (! frp-man (make-event
                           (make-sixkey
-                           (send key-event get-key-code))
+                           (send key-event get-key-code)
+                           (send key-event get-shift-down)
+                           (send key-event get-control-down)
+                           (send key-event get-meta-down)
+                           (send key-event get-alt-down))
                           key-listener))))])
 
       (public

@@ -1,12 +1,12 @@
 (module animation (lib "frtime.ss" "frtime")
   
   (require (all-except "graphics.ss" make-posn posn-x posn-y make-rgb)
-           (lift "graphics.ss" make-posn make-rgb)
-           (lift/strict "graphics.ss" posn-x posn-y)
+           (lifted/nonstrict "graphics.ss" make-posn make-rgb)
+           (lifted "graphics.ss" posn-x posn-y)
            (all-except (lib "match.ss") match)
            (lib "list.ss" "frtime")
            (all-except (lib "etc.ss") rec build-list)
-           (lift/strict (lib "math.ss") sqr)
+           (lifted (lib "math.ss") sqr)
            (as-is (lib "math.ss") pi))
   
   (open-graphics)
@@ -51,8 +51,12 @@
                          (sixmouse-x ev)
                          (sixmouse-y ev))))))
   
+  (define filtered-keys (viewport-key-events window))
+  (define shift-down (hold #f (filtered-keys . ==> . sixkey-shift)))
+  (define control-down (hold #f (filtered-keys . ==> . sixkey-control)))
+  (define meta-down (hold #f (filtered-keys . ==> . sixkey-meta)))
+  (define alt-down (hold #f (filtered-keys . ==> . sixkey-alt)))
   (define key-strokes ((viewport-key-events window) . ==> . sixkey-value))
-  
   (define left-clicks ((viewport-mouse-events window) . =#> . sixmouse-left?))
   (define middle-clicks ((viewport-mouse-events window) . =#> . sixmouse-middle?))
   (define right-clicks ((viewport-mouse-events window) . =#> . sixmouse-right?))
@@ -289,5 +293,5 @@
   (provide
    (all-defined-except pixmap window draw-list l d make-circle make-ring make-solid-ellipse
                        make-rect make-line make-polygon make-graph-string make-wave-state wave-state-hz wave-state-offset)
-   (lift make-circle make-ring make-solid-ellipse make-rect make-line make-polygon make-graph-string)
+   (lifted make-circle make-ring make-solid-ellipse make-rect make-line make-polygon make-graph-string)
    (all-from-except "graphics.ss")))
