@@ -1,9 +1,9 @@
 
 (module date mzscheme
 
-  (import "list.ss")
+  (require "list.ss")
 
-  (export date->string
+  (provide date->string
 	  date-display-format
 	  find-seconds
 	  

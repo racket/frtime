@@ -4,7 +4,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (module math mzscheme
-  (export e 
+  (provide e 
 	  pi 
 	  square
 	  sgn conjugate

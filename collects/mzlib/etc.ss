@@ -1,9 +1,9 @@
 
 (module etc mzscheme
-  (import "spidey.ss")
-  (import-for-syntax (lib "kerncase.ss" "syntax"))
+  (require "spidey.ss")
+  (require-for-syntax (lib "kerncase.ss" "syntax"))
 
-  (export true false
+  (provide true false
 	  boolean=? symbol=?
 	  char->string
 	  identity
