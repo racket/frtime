@@ -27,6 +27,7 @@
 	   nand
 	   let+
 
+	   namespace-defined?
 	   this-expression-source-directory
 	   define-syntax-set)
   
@@ -422,6 +423,13 @@
 		     (syntax (letrec-values ([vars expr] ...) rest)))]
 		  [(_ expr0 expr ...)
 		   (syntax (begin expr0 expr ... rest))])))))])))
+
+ (define (namespace-defined? n)
+   (unless (symbol? n)
+     (raise-type-error 'namespace-defined? "symbol" n))
+   (with-handlers ([exn:variable? (lambda (x) #f)])
+     (namespace-variable-binding n)
+     #t))
 
  (define-syntax (this-expression-source-directory stx)
    (syntax-case stx ()
