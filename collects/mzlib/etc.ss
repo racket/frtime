@@ -1,6 +1,7 @@
 
 (module etc mzscheme
   (import "spidey.ss")
+  (import-for-syntax (lib "kerncase.ss" "syntax"))
 
   (export true false
 	  boolean=? symbol=?
@@ -12,7 +13,14 @@
 	  build-vector
 	  build-list
 
-	  loop-until)
+	  loop-until
+
+	  local
+	  recur
+	  rec
+	  evcase
+	  nor
+	  nand)
 
   (define true #t)
   (define false #f)
@@ -118,4 +126,188 @@
   (define (char->string c)
     (unless (char? c)
       (raise-type-error 'char->string "character" c))
-    (string c)))
+    (string c))
+
+ 
+ (define-syntax opt-lambda 
+   (lambda (stx)
+     (with-syntax ([loop (or (syntax-local-name)
+			     (quote-syntax opt-lambda-proc))])
+       (syntax-case stx ()
+	 [(_ args body1 body ...)
+	  (let ([clauses (let loop ([pre-args null]
+				    [args (syntax args)]
+				    [needs-default? #f])
+			   (syntax-case args ()
+			     [id
+			      (identifier? (syntax id))
+			      (with-syntax ([(pre-arg ...) pre-args])
+				(syntax ([(pre-arg ... . id)
+					  body1 body ...])))]
+			     [(id . rest)
+			      (identifier? (syntax id))
+			      (begin
+				(unless needs-default?
+				  (raise-syntax-error
+				   'opt-lambda
+				   "default value missing"
+				   stx
+				   (syntax id)))
+				(loop (append pre-args (list (syntax id)))
+				      (syntax rest)
+				      #f))]
+			     [([id default] . rest)
+			      (identifier? (syntax id))
+			      (with-syntax ([rest (loop (append pre-args (list (syntax id)))
+							(syntax rest)
+							#t)]
+					    [(pre-arg ...) pre-args])
+				(syntax ([(pre-arg ...) (name pre-arg ... default)]
+					 . rest)))]
+			     [(bad . rest)
+			      (raise-syntax-error
+			       'opt-lambda
+			       "not an identifier or identifier with default"
+			       stx
+			       (syntax bad))]
+			     [else
+			      (raise-syntax-error
+			       'opt-lambda
+			       "bad identifier sequence"
+			       stx
+			       (syntax args))]))])
+	    (syntax/loc stx
+			(letrec ([loop
+				  (case-lambda
+				   . clauses)])
+			  loop)))]))))
+ 
+ (define-syntax local 
+   (lambda (stx)
+     (syntax-case stx ()
+       [(_ (defn ...) body1 body ...)
+	(let ([defs (map
+		     (lambda (defn)
+		       (let ([d (local-expand
+				 defn
+				 (kernel-form-identifier-list 
+				  (quote-syntax here)))])
+			 (syntax-case d (define-values)
+			   [(define-values (id ...) body)
+			    (for-each
+			     (lambda (id)
+			       (unless (identifier? id)
+				 (raise-syntax-error
+				  'local
+				  "not an identifier for definition"
+				  stx
+				  id)))
+			     (syntax->list (syntax (id ...))))]
+			   [(define-values . rest)
+			    (raise-syntax-error
+			     'local
+			     "ill-formed definition"
+			     stx
+			     d)]
+			   [_else
+			    (raise-syntax-error
+			     'local
+			     "not a definition"
+			     stx
+			     defn)])
+			 d))
+		     (syntax->list (syntax (defn ...))))])
+	  (let ([ids (apply append
+			    (map
+			     (lambda (d)
+			       (syntax-case d ()
+				 [(_ ids . __)
+				  (syntax->list (syntax ids))]))
+			     defs))])
+	    (let ([dup (check-duplicate-identifier ids)])
+	      (when dup
+		(raise-syntax-error
+		 'local
+		 "duplicate identifier"
+		 stx
+		 dup)))
+	    (with-syntax ([(def ...) defs])
+	      (syntax/loc
+	       stx
+	       (let ()
+		 def ...
+		 (let ()
+		   body1
+		   body ...))))))]
+       [(_ x body1 body ...)
+	(raise-syntax-error
+	 'local
+	 "not a definition sequence"
+	 stx
+	 (syntax x))])))
+
+ ;; recur is another name for 'let' in a named let
+ (define-syntax recur 
+   (lambda (stx)
+     (syntax-case stx ()
+       [(_ . rest)
+	(syntax/loc stx (let . rest))])))
+
+ ;; define a recursive value
+ (define-syntax rec
+   (lambda (stx)
+     (syntax-case stx ()
+       [(_ name expr)
+	(begin
+	  (unless (identifier? (syntax name))
+	    (raise-syntax-error
+	     'rec
+	     "not an identifier"
+	     stx
+	     (syntax name)))
+	  (syntax/loc stx
+	      (letrec ([name expr])
+		name)))])))
+
+ (define-syntax evcase 
+   (lambda (stx)
+     (syntax-case stx ()
+       [(_ val [test body ...] ...)
+	(with-syntax ([(test ...)
+		       (map
+			(lambda (t)
+			  (syntax-case t (else)
+			    [else #t]
+			    [_else t]))
+			(syntax->list (syntax (test ...))))])
+	  (syntax/loc stx
+	      (let ([evcase-v val])
+		[(eqv? evcase-v test)
+		 body ...]
+		...)))]
+       [(_ val something ...)
+	;; Provide a good error message:
+	(for-each
+	 (lambda (s)
+	   (syntax-case s ()
+	     [(t a ...)
+	      (raise-syntax-error
+	       'evcase
+	       "invalid clause"
+	       stx
+	       s)]))
+	 (syntax->list (syntax (something ...))))])))
+       
+ (define-syntax nor
+   (lambda (stx)
+     (syntax-case stx ()
+       [(_ expr ...)
+	(syntax/loc stx (not (or expr ...)))])))
+ 
+ (define-syntax nand
+   (lambda (stx)
+     (syntax-case stx ()
+       [(_ expr ...)
+	(syntax/loc stx (not (and expr ...)))])))
+
+ )
