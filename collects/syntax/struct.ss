@@ -96,12 +96,18 @@
 	  ,(qs (cadr names))
 	  ,(qs (caddr names))
 	  (list-immutable 
-	   ,@(reverse (map qs (every-other flds)))
+	   ,@(reverse (if omit-sel?
+			  null
+			  (map qs (if omit-set? flds (every-other flds)))))
 	   ,@(map qs (add-#f omit-sel? base-getters)))
 	  (list-immutable
-	   ,@(reverse (map qs (every-other (if (null? flds)
-					      null
-					      (cdr flds)))))
+	   ,@(reverse (if omit-set?
+			  null
+			  (map qs (if omit-sel?
+				      flds
+				      (every-other (if (null? flds)
+						       null
+						       (cdr flds)))))))
 	   ,@(map qs (add-#f omit-set? base-setters)))
 	  ,(qs base-name)))))
 
