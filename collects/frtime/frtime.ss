@@ -237,6 +237,7 @@
            let
            let-values
            let*
+	   let*-values
            begin
            begin0
            quote
