@@ -118,7 +118,6 @@
        (cell (new-cell undefined))
        (updater (proc->signal
 		 (lambda () (send this set-value (get-value cell)))
-		 undefined
                  cell)))
       
       (super-instantiate ())

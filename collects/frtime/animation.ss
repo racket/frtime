@@ -154,12 +154,14 @@
                                                     "black")]
                    [else (void)])) posl)
     (copy-viewport pm vp))
-    
+
+  #|
   (define foldl
     (case-lambda
       [(f i l) (if (cons? l)
                    (foldl f (f (first l) i) (rest l))
                    i)]))
+  |#
   
   (define (build-list n f)
     (build-list-help 0 n f))
