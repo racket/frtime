@@ -141,7 +141,7 @@
   ; TO DO: assoc member [vectors] structs
   ; first cut: could be made more efficient by creating
   ; a dedicated signal to update each element of the vector
-  (define (frtime:vector2 . args)
+  (define (frtime:vector . args)
     (if (ormap behavior? args)
         (let* ([n (length args)]
                [v1 (make-vector n)]
@@ -160,7 +160,7 @@
            args))
         (apply vector args)))
 
-  (define (frtime:vector . args)
+  (define (frtime:vector2 . args)
     (if (ormap behavior? args)
         (let* ([n (length args)]
                [vec (make-vector n)]
@@ -212,7 +212,7 @@
                    integer? quotient remainder positive? negative? inexact->exact exact->inexact
                    make-polar denominator truncate bitwise-not bitwise-xor bitwise-and bitwise-ior inexact?
                    char-whitespace? assq assv memq memv list-tail reverse append length seconds->date
-                   expand syntax-object->datum exn-message
+                   expand syntax-object->datum exn-message continuation-mark-set->list exn-continuation-marks
 
                    )
            (rename frtime:case case)
@@ -222,7 +222,7 @@
            make-namespace namespace? namespace-symbol->identifier namespace-variable-value
            namespace-set-variable-value! namespace-undefine-variable! namespace-mapped-symbols
            parameterize current-seconds current-milliseconds current-inexact-milliseconds
-           call-with-values
+           call-with-values 
            null gensym collect-garbage
            error define-struct set! printf for-each void
            procedure-arity-includes? raise-type-error raise
@@ -254,7 +254,7 @@
            #%datum
            #%plain-module-begin
            #%module-begin
-           watch
+           render
            require
            provide
            letrec

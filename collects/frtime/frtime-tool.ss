@@ -52,13 +52,15 @@ wraps the load of the module.)
                     [else false])
                   (loop (rest lis)))))))
             
-      (define (watch watch-list value)
-        (if (empty? watch-list)
-            value
-            (cond
-              [(weak-box-value (first watch-list)) =>
-               (lambda (f) (watch (rest watch-list) (f value)))]
-              [else (watch (rest watch-list) value)])))
+      (define (watch watch-list value as-snip?)
+        (foldl
+         (lambda (wb acc)
+           (cond
+             [(weak-box-value wb)
+              => (lambda (f) (f acc as-snip?))]
+             [else acc]))
+         value
+         watch-list))
       
       (define language%
 	(class (drscheme:language:module-based-language->language-mixin
@@ -71,7 +73,7 @@ wraps the load of the module.)
               (super-on-execute settings run-in-user-thread)
               (run-in-user-thread
                (lambda ()
-                 (let ([new-watch (namespace-variable-value 'watch)]
+                 (let ([new-watch (namespace-variable-value 'render)]
                        [set-evspc (namespace-variable-value 'set-eventspace)])
                    (set-evspc drs-eventspace)
                    (set! watch-list
@@ -84,10 +86,10 @@ wraps the load of the module.)
                   (super:render-value        render-value))
           (override render-value/format render-value)
           (define (render-value/format value settings port put-snip width)
-            (super:render-value/format (watch watch-list value)
+            (super:render-value/format (watch watch-list value put-snip)
                                        settings port put-snip width))
           (define (render-value value settings port put-snip)
-            (super:render-value (watch watch-list value)
+            (super:render-value (watch watch-list value put-snip)
                                 settings port put-snip))
 	  (define/override (use-namespace-require/copy?) #t)
 	  (super-instantiate ())))
