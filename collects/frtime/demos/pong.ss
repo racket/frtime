@@ -1,16 +1,17 @@
-(module demo6 (lib "frtime.ss" "frtime")
+(module pong (lib "frtime.ss" "frtime")
   
   (require
    (lib "animation.ss" "frtime")
    (all-except (lib "match.ss") match))
   
-  (define remote-machine (new-cell 'krank.cs.brown.edu))
+  (define paddle-radius 20)
+  (define (neg-x p)
+    (make-posn (- (posn-x p)) (posn-y p)))
+  (define (neg-y p)
+    (make-posn (posn-x p) (- (posn-y p))))
   
   (define pos1
-    (let ([paddle-radius 20]
-          [neg-x (lambda (v) (make-posn (- (posn-x v)) (posn-y v)))]
-          [neg-y (lambda (v) (make-posn (posn-x v) (- (posn-y v))))]
-          [paddle2-pos (make-posn (clip (posn-x mouse-pos) 230 370) (clip (posn-y mouse-pos) 30 370))]
+    (let ([paddle2-pos (make-posn (clip (posn-x mouse-pos) 230 370) (clip (posn-y mouse-pos) 30 370))]
           [collide (match-lambda
                      [(_ mp p)
                       (let ([u (normalize (posn- mp p))])
@@ -52,12 +53,12 @@
                                                  0)))
                                    30 370))]
                [pos1 (switch
-                      (posn+ (make-posn 100 100) (posn-integral vel1))
                       ((merge-e
                         (when-e (> (posn-x pos1) 500))
                         (when-e (< (posn-x pos1) -100))
                         (when-e (> (posn-y pos1) 500))
-                        (when-e (< (posn-y pos1) -100))) . -=> . (posn+ (make-posn 100 100) (posn-integral vel1))))]
+                        (when-e (< (posn-y pos1) -100))) . -=> . (posn+ (make-posn 100 100) (posn-integral vel1)))
+                                            (posn+ (make-posn 100 100) (posn-integral vel1)))]
                [vel1 (accum-b
                       (merge-e
                        ((merge-e

@@ -1,4 +1,4 @@
-(module demo5 (lib "frtime.ss" "frtime")
+(module ball-on-string (lib "frtime.ss" "frtime")
   
   (require (lib "animation.ss" "frtime"))
   

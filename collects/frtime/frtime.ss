@@ -183,11 +183,12 @@
                       ret))])
           (apply proc->signal (lambda () arg-behs vec) arg-behs))
         (apply vector args)))
-    #|
-  (define-syntax -->
+
+  (define-syntax snapshot
     (syntax-rules ()
-      [(_ args body) (lambda args body)]))
-|#
+      [(_ (id ...) expr ...)
+       (let ([id (value-now id)] ...)
+         expr ...)]))
   
   (define ((behaviorof pred) x)
     (let ([v (value-now x)])
@@ -287,7 +288,8 @@
   ;; Defined in this module:
   (provide when unless behaviorof -=> nothing nothing?
            cond and or andmap ormap map
-           caar cadr cdar cddr caddr cdddr cadddr cddddr)
+           caar cadr cdar cddr caddr cdddr cadddr cddddr
+           snapshot)
 
   ; returns true on values that can be passed to value-now
   ; (e.g. behaviors or constants)
@@ -306,7 +308,7 @@
 
    [until (value-nowable? value-nowable? . -> . behavior?)]
 
-   [switch (value-nowable? event? . -> . behavior?)]
+   [switch ((event?) (value-nowable?) . opt-> . behavior?)]
 
    [merge-e (() (listof event?) . ->* . (event?))]
 
@@ -344,7 +346,7 @@
 
    [send-synchronous-events ((listof (list/p event-receiver? any?)) . -> . void?)]
 
-   [hold ((event?) (any?) . opt-> . behavior?)]
+   [hold ((event?) (value-nowable?) . opt-> . behavior?)]
 
    [new-cell (() (value-nowable?) . opt-> . behavior?)]
 

@@ -1,4 +1,4 @@
-(module demo4 (lib "frtime.ss" "frtime")
+(module delay-mouse (lib "frtime.ss" "frtime")
   
   (require (lib "animation.ss" "frtime")
            (lib "etc.ss" "frtime"))
