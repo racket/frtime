@@ -1,7 +1,8 @@
 
 (module etc mzscheme
   (require "spidey.ss")
-  (require-for-syntax (lib "kerncase.ss" "syntax"))
+  (require-for-syntax (lib "kerncase.ss" "syntax")
+		      (lib "stx.ss" "syntax"))
 
   (provide true false
 	   boolean=? symbol=?
@@ -24,7 +25,8 @@
 	   nand
 	   let+
 
-	   this-expression-source-directory)
+	   this-expression-source-directory
+	   define-syntax-set)
   
   (define true #t)
   (define false #f)
@@ -189,38 +191,56 @@
    (lambda (stx)
      (syntax-case stx ()
        [(_ (defn ...) body1 body ...)
-	(let ([defs (map
-		     (lambda (defn)
-		       (let ([d (local-expand
-				 defn
-				 'internal-define
-				 (kernel-form-identifier-list 
-				  (quote-syntax here)))])
-			 (syntax-case d (define-values)
-			   [(define-values (id ...) body)
-			    (for-each
-			     (lambda (id)
-			       (unless (identifier? id)
-				 (raise-syntax-error
-				  #f
-				  "not an identifier for definition"
-				  stx
-				  id)))
-			     (syntax->list (syntax (id ...))))]
-			   [(define-values . rest)
-			    (raise-syntax-error
-			     #f
-			     "ill-formed definition"
-			     stx
-			     d)]
-			   [_else
-			    (raise-syntax-error
-			     #f
-			     "not a definition"
-			     stx
-			     defn)])
-			 d))
-		     (syntax->list (syntax (defn ...))))])
+	(let ([defs (let loop ([defns (syntax->list (syntax (defn ...)))])
+		      (apply
+		       append
+		       (map
+			(lambda (defn)
+			  (let ([d (local-expand
+				    defn
+				    'internal-define
+				    (kernel-form-identifier-list 
+				     (quote-syntax here)))]
+				[check-ids (lambda (ids)
+					     (for-each
+					      (lambda (id)
+						(unless (identifier? id)
+						  (raise-syntax-error
+						   #f
+						   "not an identifier for definition"
+						   stx
+						   id)))
+					      ids))])
+			    (syntax-case d (define-values define-syntaxes begin)
+			      [(begin defn ...)
+			       (loop (syntax->list (syntax (defn ...))))]
+			      [(define-values (id ...) body)
+			       (begin
+				 (check-ids (syntax->list (syntax (id ...))))
+				 (list d))]
+			      [(define-values . rest)
+			       (raise-syntax-error
+				#f
+				"ill-formed definition"
+				stx
+				d)]
+			      [(define-syntaxes (id ...) body)
+			       (begin
+				 (check-ids (syntax->list (syntax (id ...))))
+				 (list d))]
+			      [(define-syntaxes . rest)
+			       (raise-syntax-error
+				#f
+				"ill-formed definition"
+				stx
+				d)]
+			      [_else
+			       (raise-syntax-error
+				#f
+				"not a definition"
+				stx
+				defn)])))
+			defns)))])
 	  (let ([ids (apply append
 			    (map
 			     (lambda (d)
@@ -412,4 +432,43 @@
 	      (with-syntax ([base base])
 		(syntax base)))
 	    (syntax (or (current-load-relative-directory)
-			(current-directory)))))])))
+			(current-directory)))))]))
+
+ (define-syntax (define-syntax-set stx)
+    (syntax-case stx ()
+      [(_ (id ...) defn ...)
+       (let ([ids (syntax->list (syntax (id ...)))])
+	 ;; Check ids ------------------------------
+	 (for-each (lambda (id)
+		     (unless (identifier? id)
+		       (raise-syntax-error
+			#f
+			"not an identifier or two identifier in parentheses"
+			stx
+			id)))
+		   ids)
+	 (let ([dup (check-duplicate-identifier ids)])
+	     (when dup
+	       (raise-syntax-error
+		#f
+		"duplicate identifier"
+		stx
+		dup)))
+	 (let ([internal-ids (map (lambda (id)
+				    (datum->syntax-object
+				     id
+				     (string->symbol (format "~a/proc" (syntax-e id)))
+				     id))
+				  ids)])
+	   
+	   
+	   ;; We'd like to check the `defns', but that requires
+	   ;; and expansion in a different phase. So we punt for now.
+	   
+	   ;; Produce result ------------------------------
+	   (with-syntax ([(int-id ...) internal-ids])
+	     (syntax/loc stx
+	       (define-syntaxes (id ...)
+		 (let ()
+		   defn ...
+		   (values int-id ...)))))))])))
