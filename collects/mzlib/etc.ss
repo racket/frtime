@@ -3,6 +3,7 @@
   (require "spidey.ss")
   (require-for-syntax (lib "kerncase.ss" "syntax")
 		      (lib "stx.ss" "syntax")
+		      (lib "name.ss" "syntax")
 		      "private/stxset.ss")
 
   (provide true false
@@ -132,7 +133,7 @@
 
  (define-syntax opt-lambda 
    (lambda (stx)
-     (with-syntax ([name (or (syntax-local-name)
+     (with-syntax ([name (or (syntax-local-infer-name stx)
 			     (quote-syntax opt-lambda-proc))])
        (syntax-case stx ()
 	 [(_ args body1 body ...)
