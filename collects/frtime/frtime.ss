@@ -141,7 +141,7 @@
   ; TO DO: assoc member [vectors] structs
   ; first cut: could be made more efficient by creating
   ; a dedicated signal to update each element of the vector
-  (define (frtime:vector . args)
+  (define (frtime:vector2 . args)
     (if (ormap behavior? args)
         (let* ([n (length args)]
                [v1 (make-vector n)]
@@ -160,7 +160,7 @@
            args))
         (apply vector args)))
 
-  (define (frtime:vector2 . args)
+  (define (frtime:vector . args)
     (if (ormap behavior? args)
         (let* ([n (length args)]
                [vec (make-vector n)]
@@ -180,7 +180,7 @@
                                 arg))
                              ret))
                       ret))])
-          (apply proc->signal (lambda () vec) arg-behs))
+          (apply proc->signal (lambda () arg-behs vec) arg-behs))
         (apply vector args)))
     #|
   (define-syntax -->
