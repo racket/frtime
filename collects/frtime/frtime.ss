@@ -328,8 +328,8 @@
     (not (and (signal? v) (event-cons? (signal-value v)))))
 
   (provide/contract
-   [proc->signal (((-> any?))
-                  any?
+   [proc->signal (((-> any/c))
+                  any/c
                   . ->* . (signal?))]
 
    [value-now (value-nowable? . -> . any)]
@@ -350,42 +350,42 @@
 
    [while-e (value-nowable? value-nowable? . -> . event?)]
 
-   [==> (event? (any? . -> . any) . -> . event?)]
+   [==> (event? (any/c . -> . any) . -> . event?)]
 
-   [=#> (event? (any? . -> . any) . -> . event?)]
+   [=#> (event? (any/c . -> . any) . -> . event?)]
 
-   [=#=> (event? (any? . -> . (union any? nothing?)) . -> . event?)]
+   [=#=> (event? (any/c . -> . (union any/c nothing?)) . -> . event?)]
 
-   [map-e ((any? . -> . any) event? . -> . event?)]
+   [map-e ((any/c . -> . any) event? . -> . event?)]
    
-   [filter-e ((any? . -> . any) event? . -> . event?)]
+   [filter-e ((any/c . -> . any) event? . -> . event?)]
 
-   [filter-map-e ((any? . -> . (union any? nothing?)) event? . -> . event?)]
+   [filter-map-e ((any/c . -> . (union any/c nothing?)) event? . -> . event?)]
 
-   [collect-e (event? any? (any? any? . -> . any) . -> . event?)]
+   [collect-e (event? any/c (any/c any/c . -> . any) . -> . event?)]
 
-   [collect-b (event? any? (any? any? . -> . any) . -> . behavior?)]
+   [collect-b (event? any/c (any/c any/c . -> . any) . -> . behavior?)]
 
-   [accum-e (event? any? . -> . event?)]
+   [accum-e (event? any/c . -> . event?)]
    
-   [accum-b (event? any? . -> . behavior?)]
+   [accum-b (event? any/c . -> . behavior?)]
 
-   [send-event (event-receiver? any? . -> . void?)]
+   [send-event (event-receiver? any/c . -> . void?)]
 
-   [send-synchronous-event (event-receiver? any? . -> . void?)]
+   [send-synchronous-event (event-receiver? any/c . -> . void?)]
 
    [send-synchronous-events (list? . -> . void?)]
 
    [hold ((event?) (value-nowable?) . opt-> . behavior?)]
 
-   [new-cell (() (any?) . opt-> . (union behavior? event?))]
+   [new-cell (() (any/c) . opt-> . (union behavior? event?))]
 
-   [set-cell! ((union behavior? event?) any? . -> . void?)]
+   [set-cell! ((union behavior? event?) any/c . -> . void?)]
 
-   [snapshot-e ((event?) any? . ->* . (event?))]
+   [snapshot-e ((event?) any/c . ->* . (event?))]
 
    [snapshot-map-e ((procedure? event?)
-                    any?     ;; the behaviors
+                    any/c     ;; the behaviors
                     . ->* . 
                     (event?))]
 
