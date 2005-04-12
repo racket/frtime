@@ -69,7 +69,9 @@
 				     (loop (cdr l) (add1 n))))))]
 	    [extra-props (mk-rec-prop-list 'struct: 'make- '? 'acc 'mut)])
 	`(let-values ([(struct: make- ? acc mut)
-		       (make-struct-type ',name ,super-type ,num-fields 0 #f ,prop-value-list #f #f ,immutable-positions)])
+		       (make-struct-type ',name ,super-type ,num-fields 0 #f 
+					 ,prop-value-list (current-inspector)
+					 #f ,immutable-positions)])
 	   (values struct:
 		   make-
 		   ?
