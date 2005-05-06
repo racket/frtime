@@ -4,13 +4,91 @@
 	   "stx.ss")
   (require-for-template mzscheme)
   
-  (provide build-struct-names
+  (provide parse-define-struct
+
+	   build-struct-names
 	   build-struct-generation
 	   build-struct-expand-info
 	   struct-declaration-info?
            
 	   generate-struct-declaration
 	   generate-delayed-struct-declaration)
+
+
+  ;; parse-define-struct stx stx -> (values id id-or-#f list-of-id stx)
+  (define (parse-define-struct stx orig-stx)
+
+    (define (parse-at-id)
+      (syntax-case stx ()
+	[(_ id . rest)
+	 (identifier? #'id)
+	 (parse-at-fields #'id #f #'rest)]
+	[(_ (id super-id) . rest)
+	 (and (identifier? #'id)
+	      (identifier? #'super-id))
+	 (parse-at-fields #'id #'super-id #'rest)]
+	[(_ bad . rest)
+	   (raise-syntax-error
+	    #f
+	    "expected an identifer or parenthesized sequence of two identifiers"
+	    orig-stx
+	    #'bad)]))
+
+    (define (parse-at-fields id sup-id rest)
+	(syntax-case rest ()
+	  [((field ...) . rest)
+	   (let ([fields (syntax->list #'(field ...))])
+	     (for-each (lambda (id)
+			 (unless (identifier? id)
+			   (raise-syntax-error
+			    #f
+			    "expected a field identifier"
+			    orig-stx
+			    id)))
+		       fields)
+	     (parse-at-inspector id sup-id fields #'rest))]
+	  [(bad . rest)
+	   (raise-syntax-error
+	    #f
+	    "expected a parenthesized sequence of field identifiers"
+	    orig-stx
+	    #'bad)]
+	  [_
+	   (raise-syntax-error
+	    #f
+	    (string-append "expected fields after " (if sup-id
+							"struct name and parent name"
+							"struct name"))
+	    orig-stx)]))
+
+      (define (parse-at-inspector id sup-id fields rest)
+	(syntax-case rest ()
+	  [() 
+	   (values id sup-id fields #'(current-inspector))]
+	  [(inspector more . rest)
+	   (not (stx-null? #'rest))
+	   (raise-syntax-error
+	    #f
+	    "unexpected form after inspector"
+	    orig-stx
+	    #'more)]
+	  [(inspector)
+	   (values id sup-id fields #'inspector)]
+	  [(inspector . rest)
+	   (raise-syntax-error
+	    #f
+	    "unexpected form after inspector"
+	    orig-stx
+	    #'rest)]
+	  [_
+	   (raise-syntax-error
+	    #f
+	    "bad syntax"
+	    orig-stx)]))
+	  
+
+      (parse-at-id))
+
 
   ;; build-struct-names : id (list-of id) bool bool -> (list-of id)
   (define build-struct-names
