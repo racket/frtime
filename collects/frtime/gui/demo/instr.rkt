@@ -38,7 +38,7 @@
 
 ; apply the mixin
 ; fr-value-text-field%s will set their value to the value of 
-; the event occurances supplied in the initialization argument
+; the event occurrences supplied in the initialization argument
 ; value-set-e
 (define fr-value-text-field% (set-value-lifter text-field%))
 
@@ -95,7 +95,7 @@
                     (label "Check3")))
 
 ; get the streams from the check boxes
-(printf "callbacks->args-evts:~n")
+(printf "callbacks->args-evts:\n")
 (send my-cb1 get-focus-events)
 (send my-cb2 get-focus-events)
 (send my-cb3 get-focus-events)
@@ -143,7 +143,7 @@
                        (map-e car es)))
                     (label "Check4")))
 
-(printf "mixin-merge-e:~n")
+(printf "mixin-merge-e:\n")
 
 (send my-cb4 get-focus-events) ; focus-events
 (send my-cb4 get-key-events) ; key-events
