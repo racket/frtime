@@ -1,5 +1,7 @@
 #lang setup/infotab
 
+(define single-collection "frtime")
+
 (define name "FrTime")
 
 (define compile-omit-paths '("demos" "tests"))
