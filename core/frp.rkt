@@ -470,7 +470,7 @@
     (for-each
      (lambda (wb)
        (match (weak-box-value wb)
-         [(and (? signal?) (not (? signal-stale?)) dep)
+         [(? signal? (not (? signal-stale?)) dep)
           (set-signal-stale?! dep #t)
           ; If I'm crossing a "back" edge (one potentially causing a cycle),
           ; then I send a message.  Otherwise, I add to the internal
