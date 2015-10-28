@@ -469,17 +469,16 @@
         [depth (signal-depth b)])
     (for-each
      (lambda (wb)
-       (let ([dep (weak-box-value wb)])
-         (cond
-           [(and dep (signal? dep) (not (signal-stale? dep)))
-            (set-signal-stale?! dep #t)
-            ; If I'm crossing a "back" edge (one potentially causing a cycle),
-            ; then I send a message.  Otherwise, I add to the internal
-            ; priority queue.
-            (if (< depth (signal-depth dep))
-                (iq-enqueue wb)
-                (! man dep))]
-           [else (set! empty-boxes (add1 empty-boxes))])))
+       (match (weak-box-value wb)
+         [(? signal? (not (? signal-stale?)) dep)
+          (set-signal-stale?! dep #t)
+          ; If I'm crossing a "back" edge (one potentially causing a cycle),
+          ; then I send a message.  Otherwise, I add to the internal
+          ; priority queue.
+          (if (< depth (signal-depth dep))
+              (iq-enqueue wb)
+              (! man dep))]
+         [_ (set! empty-boxes (add1 empty-boxes))]))
      dependents)
     (when (> empty-boxes 9)
       (set-signal-dependents!
