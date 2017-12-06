@@ -1,4 +1,5 @@
 #lang racket/base
+
 (require racket/struct-info
          (for-syntax racket/base)
          (for-template racket/base))

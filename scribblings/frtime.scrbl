@@ -1,4 +1,5 @@
 #lang scribble/doc
+
 @(require scribble/manual
   (for-label racket
     racket/class

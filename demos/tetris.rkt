@@ -1,4 +1,5 @@
 #lang frtime
+
 (require (lifted (only-in texpict/mrpict colorize) colorize)
          (lifted (only-in texpict/mrpict vl-append) vl-append)
          (lifted (only-in texpict/mrpict vr-append) vr-append)

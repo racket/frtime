@@ -1,5 +1,6 @@
-#lang scheme
-(require scheme/package
+#lang racket
+
+(require racket/package
          tests/eli-tester
          frtime/core/match
          (prefix-in ch: frtime/core/mailbox)

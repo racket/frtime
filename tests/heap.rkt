@@ -1,6 +1,7 @@
-#lang scheme
+#lang racket
+
 (require frtime/core/heap
-         scheme/package
+         racket/package
          tests/eli-tester)
 
 (package-begin

@@ -1,4 +1,5 @@
 #lang frtime
+
 (require frtime/gui/simple)
 
 (current-widget-parent (new ft-frame% (width 400) (stretchable-width #t)))

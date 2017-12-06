@@ -1,6 +1,7 @@
-#lang scheme
+#lang racket
+
 (require frtime/core/dv
-         scheme/package
+         racket/package
          tests/eli-tester)
 
 (define (dv:ref* d l)

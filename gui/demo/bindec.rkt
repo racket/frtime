@@ -1,4 +1,5 @@
 #lang frtime
+
 (require frtime/gui/simple)
 (require (rename-in mred [horizontal-panel% horizontal-panel%]))
 
