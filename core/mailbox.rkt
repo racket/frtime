@@ -1,9 +1,19 @@
 #lang racket/base
 
+(require "contract.rkt")
+(provide
+ (contract-out*
+ [mailbox? (any/c . -> . boolean?)]
+ [new-mailbox (-> mailbox?)]
+ [mailbox-send! (mailbox? (not/c false/c) . -> . void)]
+ [mailbox-receive (mailbox?
+                   (or/c false/c number?)
+                   (-> any)
+                   (any/c . -> . (-> any)) . -> . (-> any))]))
+
 (require racket/bool
          racket/list
          racket/match
-         "contract.rkt"
          "match.rkt"
          racket/async-channel)
 
@@ -83,10 +93,4 @@
      (define reply-ch (make-channel))
      (thread-resume thd)
      (channel-put control (make-receive reply-ch timeout timeout-thunk matcher))
-     (channel-get reply-ch)]))  
-
-(provide/contract*
- [mailbox? (any/c . -> . boolean?)]
- [new-mailbox (-> mailbox?)]
- [mailbox-send! (mailbox? (not/c false/c) . -> . void)]
- [mailbox-receive (mailbox? (or/c false/c number?) (-> any) (any/c . -> . (-> any)) . -> . (-> any))])
+     (channel-get reply-ch)]))

@@ -11,7 +11,7 @@
                                   reset)
                            (value-now seconds))))]
   [gauge (mode widget ft-gauge% 
-               (label "Timer") 
+               (label "Timer")
                (value gauge-value) 
                (range 15)
                (stretchable-width #t))]

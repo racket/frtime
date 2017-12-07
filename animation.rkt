@@ -1,5 +1,10 @@
 #lang frtime
 
+(provide (except-out (all-defined-out)
+                     pixmap window draw-list l d 
+                     make-wave-state wave-state-hz wave-state-offset)
+         (all-from-out frtime/animation/graphics))
+
 (require (for-syntax racket/base (only-in racket/function identity))
          racket/match
          racket/class
@@ -373,8 +378,3 @@
   
 (define (posn-integral p)
   (make-posn (integral (posn-x p)) (integral (posn-y p))))
-  
-(provide
- (except-out (all-defined-out) pixmap window draw-list l d 
-             make-wave-state wave-state-hz wave-state-offset)
- (all-from-out frtime/animation/graphics))

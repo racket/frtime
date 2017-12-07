@@ -1,16 +1,17 @@
 #lang s-exp frtime/frtime-lang-only
-  
-(require 
-  (lifted (only-in racket/base sort) sort)
+
+(provide (all-defined-out) empty)
+
+(require (lifted (only-in racket/base sort) sort)
    
-  (lifted (only-in racket/list fifth) 
-          fifth)
-  (lifted (only-in racket/list sixth) sixth)
-  (lifted (only-in racket/list seventh) seventh)
-  (lifted (only-in racket/list eighth) eighth)
-  (lifted (only-in racket/list last-pair) last-pair)
-  
-  (rename-in (except-in racket/list first rest second third fourth empty? cons? fifth sixth seventh eighth last-pair) [empty empty]))
+         (lifted (only-in racket/list fifth) 
+                 fifth)
+         (lifted (only-in racket/list sixth) sixth)
+         (lifted (only-in racket/list seventh) seventh)
+         (lifted (only-in racket/list eighth) eighth)
+         (lifted (only-in racket/list last-pair) last-pair)
+         
+         (rename-in (except-in racket/list first rest second third fourth empty? cons? fifth sixth seventh eighth last-pair) [empty empty]))
 
 (define first car)
 (define rest cdr)
@@ -19,7 +20,7 @@
 (define fourth cadddr)
   
 (define empty? null?)
-  
+
 (define remove
   (letrec ([rm (case-lambda
                  [(item list) (rm item list equal?)]
@@ -168,5 +169,3 @@
   
   
 (define (cons? x) (pair? x))
-  
-(provide (all-defined-out) empty)

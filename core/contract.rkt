@@ -1,9 +1,12 @@
 #lang racket/base
 
-#;(require (for-syntax racket/contract))
+(require racket/provide-syntax
+         #;(for-syntax racket/contract))
 
-(define-syntax-rule (provide/contract* [id ctrct] ...)
-  #;(provide/contract [id ctrct] ...)
-  (provide id ...))
+(define-provide-syntax contract-out*
+  (syntax-rules ()
+    [(contract-out* [id ctrct] ...)
+     #;(contract-out [id ctrct] ...)
+     (combine-out id ...)]))
 
-(provide provide/contract*)
+(provide contract-out*)

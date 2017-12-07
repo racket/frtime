@@ -1,5 +1,7 @@
 #lang frtime
 
+(provide (all-defined-out))
+
 (require frtime/gui/fred)
 
 (module test racket/base)
@@ -44,5 +46,3 @@
           (begin
             (set! frame (new ft-frame% [label "GUI"] [min-height 150] [min-width 200]
                              [shown #t])))))))
-  
-(provide (all-defined-out))

@@ -1,8 +1,12 @@
 #lang frtime
+
+(provide (all-defined-out)
+         (all-from-out "fred.rkt")
+         (all-from-out racket/class))
   
 (require "fred.rkt"
          racket/class
-         (rename-in mred [frame% frame%])
+         racket/gui/base
          (for-syntax racket/base))
   
 (define widget (lambda (x) x))
@@ -45,10 +49,3 @@
        (letrec ([id0 exp0]
                 [id exp] ...)
          (values id0 id ...)))]))
-  
-
-
-  
-(provide (all-defined-out)
-         (all-from-out "fred.rkt")
-         (all-from-out racket/class))

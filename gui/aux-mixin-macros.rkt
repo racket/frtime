@@ -1,5 +1,7 @@
 #lang frtime
 
+(provide (all-defined-out))
+
 (require "mixin-macros.rkt")
 (require racket/class)
 (require (for-syntax racket/base))
@@ -71,5 +73,3 @@
       (add-signal-controls src clause ...))]
     [(_ src)
      src]))
-  
-(provide (all-defined-out))

@@ -12,7 +12,7 @@
          (lifted (only-in texpict/mrpict dc-for-text-size) dc-for-text-size) 
          (lifted (only-in texpict/utils filled-rectangle) filled-rectangle)
          (lifted (only-in texpict/utils rectangle) rectangle)
-         frtime/gui/fred mred
+         frtime/gui/fred racket/gui/base
          (only-in frtime/core/frp do-in-manager do-in-manager-after))
 
 ;; TODO: layered drawing, pause, game over

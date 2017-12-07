@@ -1,7 +1,7 @@
 #lang frtime
 
-(require frtime/gui/simple)
-(require (rename-in mred [horizontal-panel% horizontal-panel%]))
+(require frtime/gui/simple
+         racket/gui/base)
 
 ; just change this to change the range of the binary/decimal converter
 (define SIZE 10) 

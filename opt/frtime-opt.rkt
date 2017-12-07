@@ -9,14 +9,13 @@
 (provide (rename-out [my-module-begin #%module-begin])
          #%app #%top #%datum optimize-expr optimize-module dont-optimize)
   
-(require (for-syntax frtime/opt/lowered-equivs)
+(require (only-in frtime/core/frp super-lift undefined undefined?)
+         (only-in frtime/lang-core frp:copy-list)
+         (rename-in (except-in frtime/lang-ext undefined undefined? deep-value-now) [lift frtime:lift])
+         (rename-in frtime/lang-core [if frtime:if])
+         (for-syntax frtime/opt/lowered-equivs)
          (for-syntax (only-in srfi/1 lset-union lset-difference every))
          (for-syntax racket/list))
-(require (only-in frtime/core/frp super-lift undefined undefined?))
-(require (rename-in (except-in frtime/lang-ext undefined undefined? deep-value-now) [lift frtime:lift])
-         (rename-in frtime/lang-core [if frtime:if])
-         (only-in frtime/lang-core frp:copy-list))
-;  (require mzlib/unit mzlib/unitsig)
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper functions

@@ -1,5 +1,72 @@
 #lang racket/base
 
+(provide raise-exceptions
+         deep-value-now
+         nothing
+         nothing?
+         ;general-event-processor
+         ;general-event-processor2
+         emit
+         select
+         switch
+         merge-e
+         once-e
+         changes
+         never-e
+         when-e
+         while-e
+         ==>
+         -=>
+         =#>
+         =#=>
+         map-e
+         filter-e
+         filter-map-e
+         collect-e
+         accum-e
+         collect-b
+         accum-b
+         hold
+         for-each-e!
+         snapshot/sync
+         synchronize
+         snapshot
+         snapshot-e
+         snapshot/apply
+         milliseconds
+         fine-timer-granularity
+         seconds
+         delay-by
+         inf-delay
+         integral
+         derivative
+         new-cell
+         lift
+         lift-strict
+         event?
+         command-lambda
+         mk-command-lambda
+         until
+         event-loop
+         split
+         define-reactive
+         
+         ;; from core/frp
+         event-receiver
+         send-event
+         send-synchronous-event
+         send-synchronous-events
+         set-cell!
+         undefined
+         (rename-out [undefined?/lifted undefined?])
+         (rename-out [undefined? frp:undefined?])
+         behavior?
+         value-now
+         value-now/no-copy
+         value-now/sync
+         signal-count
+         signal?)
+
 (require (for-syntax racket/base
                      (only-in racket/list first second last-pair empty empty?))
          (only-in racket/list first second cons? empty empty? rest last-pair)
@@ -886,72 +953,3 @@
   (exceptions . ==> . (lambda (p) (when (value-now raise-exceptions)
                                     (thread
                                      (lambda () (raise (car p))))))))
-
-(provide raise-exceptions
-         deep-value-now
-         nothing
-         nothing?
-         ;general-event-processor
-         ;general-event-processor2
-         emit
-         select
-         switch
-         merge-e
-         once-e
-         changes
-         never-e
-         when-e
-         while-e
-         ==>
-         -=>
-         =#>
-         =#=>
-         map-e
-         filter-e
-         filter-map-e
-         collect-e
-         accum-e
-         collect-b
-         accum-b
-         hold
-         for-each-e!
-         snapshot/sync
-         synchronize
-         snapshot
-         snapshot-e
-         snapshot/apply
-         milliseconds
-         fine-timer-granularity
-         seconds
-         delay-by
-         inf-delay
-         integral
-         derivative
-         new-cell
-         lift
-         lift-strict
-         event?
-         command-lambda
-         mk-command-lambda
-         until
-         event-loop
-         split
-         define-reactive
-         
-         ;; from core/frp
-         event-receiver
-         send-event
-         send-synchronous-event
-         send-synchronous-events
-         set-cell!
-         undefined
-         (rename-out [undefined?/lifted undefined?])
-         (rename-out [undefined? frp:undefined?])
-         behavior?
-         value-now
-         value-now/no-copy
-         value-now/sync
-         signal-count
-         signal?)
-
-

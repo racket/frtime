@@ -1,9 +1,14 @@
 #lang s-exp "lang-utils.rkt"
 
-(require (except-in "lang-ext.rkt" lift deep-value-now))
-(require "frp-snip.rkt")
-(require (as-is:unchecked (except-in frtime/core/frp undefined undefined?)
-                          event-set? signal-value))
+(provide value-nowable? behaviorof
+         (all-from-out "lang-ext.rkt")
+         (all-from-out "lang-utils.rkt")
+         (all-from-out "frp-snip.rkt"))
+
+(require "frp-snip.rkt"
+         (as-is:unchecked (except-in frtime/core/frp undefined undefined?)
+                          event-set? signal-value)
+         (except-in "lang-ext.rkt" lift deep-value-now))
 
 (define (value-nowable? x)
   (or (not (signal? x))
@@ -13,8 +18,3 @@
   (let ([v (value-now x)])
     (or (undefined? v)
         (pred v))))
-
-(provide value-nowable? behaviorof
-         (all-from-out "lang-ext.rkt")
-         (all-from-out "lang-utils.rkt")
-         (all-from-out "frp-snip.rkt")))

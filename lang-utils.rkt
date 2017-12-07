@@ -1,5 +1,121 @@
 #lang s-exp "lang-core.rkt"
 
+(provide cond 
+         and 
+         or 
+         or-undef 
+         when 
+         unless
+         map
+         ormap 
+         andmap
+         caar
+         caadr
+         cdar
+         cadar
+         cadr
+         cddr
+         caddr
+         cdddr
+         cadddr
+         cddddr
+         build-path
+         collection-path
+         lifted-send
+         dont-optimize
+           
+         list-ref
+         (rename-out [frp:case case])
+         (rename-out [frp:apply apply])
+         (rename-out [frp:length length])
+         (rename-out [frp:list->string list->string])
+         (rename-out [eq? mzscheme:eq?])
+         reverse
+           
+         (lifted + - * / = 
+                 eq? 
+                 equal? eqv? < > <= >= 
+                 add1 cos sin tan symbol->string symbol?
+                 number->string string->symbol eof-object? exp expt even? odd? string-append eval
+                 sub1 sqrt not number? string string? zero? min max modulo
+                 string->number void? rational? char? char-upcase char-ci>=? char-ci<=?
+                 string>=? char-upper-case? char-alphabetic?
+                 string<? string-ci=? string-locale-ci>?
+                 string-locale-ci<? string-locale-ci=? atan asin acos exact? magnitude imag-part
+                 real-part numerator abs log lcm gcd arithmetic-shift integer-sqrt make-rectangular
+                 complex? char>? char<? char=?
+                 char-numeric? date-time-zone-offset substring string->list
+                 string-ci<? string-ci>=? string<=? string-ci<=? string>? string-locale<? string=?
+                 string-length string-ref
+                 floor angle round
+                 ceiling real? date-hour procedure? procedure-arity
+                 rationalize date-year-day date-week-day date? date-dst? date-year date-month date-day
+                 date-minute date-second make-date char-downcase char>=? char<=? char->integer integer->char boolean?
+                 integer? quotient remainder positive? negative? inexact->exact exact->inexact
+                 make-polar denominator truncate bitwise-not bitwise-xor bitwise-and bitwise-ior inexact?
+                 char-whitespace? assq assv memq memv list-tail
+                 seconds->date
+                 expand syntax->datum exn-message continuation-mark-set->list exn-continuation-marks
+                 exn:fail? regexp-match
+                 vector->list list->vector make-vector)
+           
+           
+         make-exn:fail  current-inspector make-inspector
+         make-empty-namespace namespace? namespace-symbol->identifier namespace-variable-value
+         namespace-set-variable-value! namespace-undefine-variable! namespace-mapped-symbols
+         parameterize current-seconds current-milliseconds current-inexact-milliseconds
+         call-with-values make-parameter
+         null
+         gensym collect-garbage
+         error set! printf fprintf current-error-port for-each void
+         procedure-arity-includes? raise-type-error raise thread
+         current-continuation-marks
+         raise-mismatch-error for-syntax define-syntax define-syntaxes syntax-rules syntax-case
+         (lifted:nonstrict format)
+         print-struct
+         define
+         let
+         let*
+         values
+         let*-values           
+         let-values
+         define-values
+         begin
+         begin0
+         quote
+         quasiquote
+         unquote
+         unquote-splicing
+           
+         syntax
+         let/ec
+         with-handlers
+         unsyntax
+         current-security-guard
+         make-security-guard
+         dynamic-require
+         path? complete-path? absolute-path? relative-path? path-string?
+         path->complete-path
+         string->path path->string
+         bytes->path path->bytes
+         split-path simplify-path normal-case-path cleanse-path resolve-path
+         path-replace-suffix
+         current-directory
+         exit
+         system-type 
+         unsyntax-splicing 
+           
+         delay
+         force
+         random
+         sleep
+         read-case-sensitive
+         file-exists?
+         with-input-from-file
+         read
+
+         (all-from-out "lang-core.rkt"))
+
 (require (only-in racket let define-syntax define apply procedure-arity syntax->datum with-input-from-file for-syntax make-empty-namespace cleanse-path collection-path begin syntax-rules)
          (except-in racket
                     else
@@ -287,120 +403,3 @@
 ;; language.  Ironically, frtime-opt has its *own* definition of this
 ;; function; this one is just for source compatibility.
 (define (dont-optimize x) x)
-  
-(provide cond 
-         and 
-         or 
-         or-undef 
-         when 
-         unless
-         map
-         ormap 
-         andmap
-         caar
-         caadr
-         cdar
-         cadar
-         cadr
-         cddr
-         caddr
-         cdddr
-         cadddr
-         cddddr
-         build-path
-         collection-path
-         lifted-send
-         dont-optimize
-           
-         list-ref
-         (rename-out [frp:case case])
-         (rename-out [frp:apply apply])
-         (rename-out [frp:length length])
-         (rename-out [frp:list->string list->string])
-         (rename-out [eq? mzscheme:eq?])
-         reverse
-           
-         (lifted + - * / = 
-                 eq? 
-                 equal? eqv? < > <= >= 
-                 add1 cos sin tan symbol->string symbol?
-                 number->string string->symbol eof-object? exp expt even? odd? string-append eval
-                 sub1 sqrt not number? string string? zero? min max modulo
-                 string->number void? rational? char? char-upcase char-ci>=? char-ci<=?
-                 string>=? char-upper-case? char-alphabetic?
-                 string<? string-ci=? string-locale-ci>?
-                 string-locale-ci<? string-locale-ci=? atan asin acos exact? magnitude imag-part
-                 real-part numerator abs log lcm gcd arithmetic-shift integer-sqrt make-rectangular
-                 complex? char>? char<? char=?
-                 char-numeric? date-time-zone-offset substring string->list
-                 string-ci<? string-ci>=? string<=? string-ci<=? string>? string-locale<? string=?
-                 string-length string-ref
-                 floor angle round
-                 ceiling real? date-hour procedure? procedure-arity
-                 rationalize date-year-day date-week-day date? date-dst? date-year date-month date-day
-                 date-minute date-second make-date char-downcase char>=? char<=? char->integer integer->char boolean?
-                 integer? quotient remainder positive? negative? inexact->exact exact->inexact
-                 make-polar denominator truncate bitwise-not bitwise-xor bitwise-and bitwise-ior inexact?
-                 char-whitespace? assq assv memq memv list-tail
-                 seconds->date
-                 expand syntax->datum exn-message continuation-mark-set->list exn-continuation-marks
-                 exn:fail? regexp-match
-                 vector->list list->vector make-vector)
-           
-           
-         make-exn:fail  current-inspector make-inspector
-         make-empty-namespace namespace? namespace-symbol->identifier namespace-variable-value
-         namespace-set-variable-value! namespace-undefine-variable! namespace-mapped-symbols
-         parameterize current-seconds current-milliseconds current-inexact-milliseconds
-         call-with-values make-parameter
-         null
-         gensym collect-garbage
-         error set! printf fprintf current-error-port for-each void
-         procedure-arity-includes? raise-type-error raise thread
-         current-continuation-marks
-         raise-mismatch-error for-syntax define-syntax define-syntaxes syntax-rules syntax-case
-         (lifted:nonstrict format)
-         print-struct
-         define
-         let
-         let*
-         values
-         let*-values           
-         let-values
-         define-values
-         begin
-         begin0
-         quote
-         quasiquote
-         unquote
-         unquote-splicing
-           
-         syntax
-         let/ec
-         with-handlers
-         unsyntax
-         current-security-guard
-         make-security-guard
-         dynamic-require
-         path? complete-path? absolute-path? relative-path? path-string?
-         path->complete-path
-         string->path path->string
-         bytes->path path->bytes
-         split-path simplify-path normal-case-path cleanse-path resolve-path
-         path-replace-suffix
-         current-directory
-         exit
-         system-type 
-         unsyntax-splicing 
-           
-         delay
-         force
-         random
-         sleep
-         read-case-sensitive
-         file-exists?
-         with-input-from-file
-         read)
-  
-; from core
-(provide (all-from-out "lang-core.rkt"))

@@ -1,9 +1,16 @@
 #lang racket/base
 
+(require "contract.rkt")
+(provide spawn/name
+         receive
+         (contract-out*
+          [! (tid? any/c . -> . void)]
+          [self (-> tid?)]))
+
+
 (require racket/bool
          racket/match
          "match.rkt"
-         "contract.rkt"
          #;"sema-mailbox.rkt"
          "mailbox.rkt")
 
@@ -84,10 +91,3 @@
      (define new-tid (create-tid name))
      (hash-set! mailboxes name (new-mailbox))
      new-tid)))
-
-(provide
- spawn/name
- receive)
-(provide/contract*
- [! (tid? any/c . -> . void)]
- [self (-> tid?)])

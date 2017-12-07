@@ -1,12 +1,17 @@
 #lang frtime
 
-(require "mixin-macros.rkt"
-         "aux-mixin-macros.rkt"
+(provide (all-defined-out)
+         (all-from-out racket/class)
+         (all-from-out "mixin-macros.rkt")
+         (all-from-out "aux-mixin-macros.rkt"))
+
+(require framework
          racket/class
+         racket/gui/base
          racket/string
          texpict/mrpict
-         mred
-         framework)
+         "mixin-macros.rkt"
+         "aux-mixin-macros.rkt")
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
@@ -308,10 +313,4 @@
   (add-callback-access
    list
    (add-void-set-value
-    menu-item%)))  
-  
-  
-(provide (all-defined-out)
-         (all-from-out racket/class)
-         (all-from-out "mixin-macros.rkt")
-         (all-from-out "aux-mixin-macros.rkt"))
+    menu-item%)))

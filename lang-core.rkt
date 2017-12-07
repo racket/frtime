@@ -1,9 +1,54 @@
 #lang racket
 
+(provide module
+         #%app
+         #%top
+         #%datum
+         #%plain-module-begin
+         #%module-begin
+         #%top-interaction
+         only-in
+         except-in
+         rename-in
+         all-from-out
+         all-defined-out
+         except-out
+           
+         raise-reactivity
+         raise-list-for-apply 
+         any-nested-reactivity?
+         compound-lift
+         list-match
+         frp:copy-list
+         frp:->boolean
+           
+         (rename-out [public-dvn deep-value-now])
+         (rename-out [frp:if if])
+         (rename-out [frp:lambda lambda])
+         (rename-out [frp:case-lambda case-lambda])
+         (rename-out [frp:letrec letrec])
+         (rename-out [frp:cons cons])
+         (rename-out [frp:car car])
+         (rename-out [frp:cdr cdr])
+         (rename-out [frp:list list])
+         (rename-out [frp:list? list?])
+         (rename-out [frp:list* list*])
+         (rename-out [frp:null? null?])
+         (rename-out [frp:pair? pair?])
+         (rename-out [frp:append append])
+         (rename-out [frp:vector vector])
+         (rename-out [frp:vector-ref vector-ref])
+         (rename-out [frp:make-struct-type make-struct-type])
+         (rename-out [frp:make-struct-field-accessor make-struct-field-accessor])
+         (rename-out [frp:make-struct-field-mutator make-struct-field-mutator])
+         (rename-out [frp:define-struct define-struct])
+         (rename-out [frp:provide provide])
+         (rename-out [frp:require require]))
+
 (require (for-syntax (only-in frtime/struct build-struct-names build-struct-generation build-struct-expand-info)
                      (only-in racket/base foldl)
-                     (only-in racket/list empty)))
-(require (only-in racket/list cons? first second rest empty empty?)
+                     (only-in racket/list empty))
+         (only-in racket/list cons? first second rest empty empty?)
          (only-in racket/base vector-ref build-vector build-list)
          (only-in racket/function identity)
          (only-in frtime/core/frp super-lift undefined undefined? behavior? do-in-manager-after do-in-manager proc->signal set-signal-thunk! register unregister iq-enqueue value-now/no-copy
@@ -534,51 +579,3 @@
               #'(begin clause ... (require require-spec))])]))
       #'(begin)
       (syntax->list #'clauses))]))
-  
-  
-  
-  
-(provide module
-         #%app
-         #%top
-         #%datum
-         #%plain-module-begin
-         #%module-begin
-         #%top-interaction
-         only-in
-         except-in
-         rename-in
-         all-from-out
-         all-defined-out
-         except-out
-           
-         raise-reactivity
-         raise-list-for-apply 
-         any-nested-reactivity?
-         compound-lift
-         list-match
-         frp:copy-list
-         frp:->boolean
-           
-         (rename-out [public-dvn deep-value-now])
-         (rename-out [frp:if if])
-         (rename-out [frp:lambda lambda])
-         (rename-out [frp:case-lambda case-lambda])
-         (rename-out [frp:letrec letrec])
-         (rename-out [frp:cons cons])
-         (rename-out [frp:car car])
-         (rename-out [frp:cdr cdr])
-         (rename-out [frp:list list])
-         (rename-out [frp:list? list?])
-         (rename-out [frp:list* list*])
-         (rename-out [frp:null? null?])
-         (rename-out [frp:pair? pair?])
-         (rename-out [frp:append append])
-         (rename-out [frp:vector vector])
-         (rename-out [frp:vector-ref vector-ref])
-         (rename-out [frp:make-struct-type make-struct-type])
-         (rename-out [frp:make-struct-field-accessor make-struct-field-accessor])
-         (rename-out [frp:make-struct-field-mutator make-struct-field-mutator])
-         (rename-out [frp:define-struct define-struct])
-         (rename-out [frp:provide provide])
-         (rename-out [frp:require require]))

@@ -1,4 +1,8 @@
 #lang frtime
+
+(provide events->callbacks
+         callbacks->args-evts)
+
 (require racket/class
          (for-syntax racket/base))
   
@@ -58,8 +62,3 @@
                      (send-event name-e args))
                    (super method-name . args)))
                (define/public (g-name) processed-events))))])))
-  
-
-  
-(provide events->callbacks
-         callbacks->args-evts)

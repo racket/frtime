@@ -1,14 +1,5 @@
 #lang s-exp frtime/frtime-lang-only
 
-(require setup/main-collects)
-(require (for-syntax racket/base
-                     syntax/kerncase
-                     syntax/stx
-                     syntax/name
-                     syntax/context
-                     setup/main-collects
-                     mzlib/private/stxset))
-  
 (provide true 
          false
          boolean=? symbol=?
@@ -28,6 +19,15 @@
          this-expression-source-directory
          define-syntax-set
          hash-table)
+
+(require setup/main-collects
+         (for-syntax racket/base
+                     syntax/kerncase
+                     syntax/stx
+                     syntax/name
+                     syntax/context
+                     setup/main-collects
+                     mzlib/private/stxset))
   
 (define true #t)
 (define false #f)

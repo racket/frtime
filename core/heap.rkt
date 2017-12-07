@@ -1,10 +1,22 @@
 #lang racket/base
 
+(require "contract.rkt")
+(provide (contract-out*
+          [heap? (any/c . -> . boolean?)]
+          [non-empty-heap? (any/c . -> . boolean?)]
+          [make-heap (sorter/c equality/c . -> . heap?)]
+          [heap-empty? (heap? . -> . boolean?)]
+          [heap-insert (heap? any/c . -> . void)]
+          [heap-pop (non-empty-heap? . -> . any/c)]
+          [heap-peak (non-empty-heap? . -> . any/c)]
+          [heap-remove-pos (non-empty-heap? exact-nonnegative-integer? . -> . void)]
+          [heap-remove (heap? any/c . -> . boolean?)]
+          [heap-contains (heap? any/c . -> . boolean?)]))
+
 (require racket/bool
          racket/match
          racket/contract
-         "dv.rkt"
-         "contract.rkt")
+         "dv.rkt")
 
 (define-struct t (sorter equality data))
 
@@ -104,15 +116,3 @@
 (define (non-empty-heap? heap)
   (and (heap? heap)
        (not (= (heap-size heap) 0))))
-
-(provide/contract*
- [heap? (any/c . -> . boolean?)]
- [non-empty-heap? (any/c . -> . boolean?)]
- [make-heap (sorter/c equality/c . -> . heap?)]
- [heap-empty? (heap? . -> . boolean?)]
- [heap-insert (heap? any/c . -> . void)]
- [heap-pop (non-empty-heap? . -> . any/c)]
- [heap-peak (non-empty-heap? . -> . any/c)]
- [heap-remove-pos (non-empty-heap? exact-nonnegative-integer? . -> . void)]
- [heap-remove (heap? any/c . -> . boolean?)]
- [heap-contains (heap? any/c . -> . boolean?)])
