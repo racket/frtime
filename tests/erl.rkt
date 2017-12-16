@@ -1,4 +1,5 @@
-#lang scheme
+#lang racket
+
 (require frtime/core/erl
          tests/eli-tester)
 

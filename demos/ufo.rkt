@@ -1,4 +1,5 @@
 #lang frtime
+
 (require frtime/animation)
 
 (define ufo-x

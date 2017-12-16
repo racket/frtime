@@ -1,17 +1,17 @@
+#lang racket/unit
+
 ; Simple graphics routines for GRacket
 ; Originally written by Johnathan Franklin
 ;
 ; modified by Gregory Cooper to support FrTime
 
-#lang racket/unit
-
 (require (for-syntax syntax/parse racket/base)
          racket/class
-         mred/mred-sig
+         (prefix-in gui: racket/gui/base)
          frtime/core/frp
          "graphics-sig.rkt")
 
-(import (prefix mred: mred^) graphics:posn^)
+(import graphics:posn^)
 (export graphics:posn-less^)
 
 (define-syntax (rec stx)
@@ -22,7 +22,7 @@
 
 (define send/proc
   (lambda (class method . args)
-    (send-generic class (make-generic mred:dc<%> method) . args)))
+    (send-generic class (make-generic gui:dc<%> method) . args)))
 
 (define send/proc2
   (lambda (class method . args)
@@ -36,11 +36,11 @@
 (define global-color-vector (make-vector 300 #f))
 (define global-pen-vector (make-vector 300 #f))
 (define global-brush-vector (make-vector 300 #f))
-(define default-font (make-object mred:font% 12 'roman 'normal 'normal))
-(define black-color (make-object mred:color% "BLACK"))
+(define default-font (make-object gui:font% 12 'roman 'normal 'normal))
+(define black-color (make-object gui:color% "BLACK"))
 
 (define sixlib-canvas%
-  (class mred:canvas%
+  (class gui:canvas%
     (super-new)
     (inherit get-parent
              min-client-width min-client-height
@@ -55,7 +55,7 @@
         (min-client-height height)
         (stretchable-width #f)
         (stretchable-height #f)
-        (set! bitmap (make-object mred:bitmap% width height))
+        (set! bitmap (make-object gui:bitmap% width height))
         (unless (send bitmap ok?)
           (error "cannot allocate viewport"))
         (send buffer-dc set-bitmap bitmap)
@@ -148,10 +148,10 @@
                   (set! width new-width)
                   (reset-size))])))
 
-(define open-frames-timer (make-object mred:timer%))
+(define open-frames-timer (make-object gui:timer%))
 
 (define sixlib-frame%
-  (class mred:frame%
+  (class gui:frame%
     (field [canvas #f])
     (define/public (set-canvas x) (set! canvas x))
     (define/augment (on-close)
@@ -217,8 +217,8 @@
       (rec draw-viewport/color
         (case-lambda
           [(color)
-           (let ([new-pen (send mred:the-pen-list find-or-create-pen color 1 'solid)]
-                 [new-brush (send mred:the-brush-list find-or-create-brush color 'solid)]
+           (let ([new-pen (send gui:the-pen-list find-or-create-pen color 1 'solid)]
+                 [new-brush (send gui:the-brush-list find-or-create-brush color 'solid)]
                  [old-pen (send dc get-pen)]
                  [old-brush (send dc get-brush)])
              (send dc set-pen new-pen)
@@ -292,7 +292,7 @@
            [nred (convert red)]
            [ngreen (convert green)]
            [nblue (convert blue)])
-      (make-object mred:color% nred ngreen nblue))))
+      (make-object gui:color% nred ngreen nblue))))
 
 (define make-color make-rgb)
 
@@ -300,10 +300,10 @@
 (define (rgb-blue rgb) (/ (send rgb blue) 255))
 (define (rgb-green rgb) (/ (send rgb green) 255))
 
-(define rgb? (lambda (object) (is-a? object mred:color%)))
+(define rgb? (lambda (object) (is-a? object gui:color%)))
 (define (color? x)
   (or (rgb? x)
-      (not (not (send mred:the-color-database find-color x)))))
+      (not (not (send gui:the-color-database find-color x)))))
 
 (define change-color
   (lambda (index color)
@@ -313,28 +313,28 @@
 
 (define (get-color index)
   (cond
-    [(is-a? index mred:color%) index]
-    [(string? index) (make-object mred:color% index)]
+    [(is-a? index gui:color%) index]
+    [(string? index) (make-object gui:color% index)]
     [else (vector-ref global-color-vector index)]))
 
 (define get-pen
   (lambda (index)
     (cond
-      [(is-a? index mred:pen%) index]
-      [(or (string? index) (is-a? index mred:color%))
-       (send mred:the-pen-list find-or-create-pen index 1 'solid)]
+      [(is-a? index gui:pen%) index]
+      [(or (string? index) (is-a? index gui:color%))
+       (send gui:the-pen-list find-or-create-pen index 1 'solid)]
       [else (vector-ref global-pen-vector index)])))
 
 (define get-brush
   (lambda (index)
     (cond
-      [(is-a? index mred:brush%) index]
-      [(or (string? index) (is-a? index mred:color%))
-       (send mred:the-brush-list find-or-create-brush index 'solid)]
+      [(is-a? index gui:brush%) index]
+      [(or (string? index) (is-a? index gui:color%))
+       (send gui:the-brush-list find-or-create-brush index 'solid)]
       [else (vector-ref global-brush-vector index)])))
 
-(define pen? (lambda (object) (is-a? object mred:pen%)))
-(define brush? (lambda (object) (is-a? object mred:brush%)))
+(define pen? (lambda (object) (is-a? object gui:pen%)))
+(define brush? (lambda (object) (is-a? object gui:brush%)))
 
 (define display-color-vector
   (lambda ()
@@ -349,24 +349,24 @@
   (lambda (name)
     (cond
       [(eq? name 'large-deco)
-       (make-object mred:font% 40 'decorative 'normal 'normal)]
+       (make-object gui:font% 40 'decorative 'normal 'normal)]
       [(eq? name 'small-roman)
-       (make-object mred:font% 12 'roman 'normal 'normal)]
+       (make-object gui:font% 12 'roman 'normal 'normal)]
       [(eq? name 'medium-roman)
-       (make-object mred:font% 24 'roman 'normal 'normal)]
+       (make-object gui:font% 24 'roman 'normal 'normal)]
       [(eq? name 'large-roman)
-       (make-object mred:font% 32 'roman 'normal 'normal)]
+       (make-object gui:font% 32 'roman 'normal 'normal)]
       [else "no such font ~a; only 'large-deco, 'small-roman, 'medium-roman, and 'large-roman"
             name])))
 
 (define custom-roman
   (lambda (size)
-    (make-object mred:font%
+    (make-object gui:font%
       size 'roman 'normal 'normal)))
 
 (define custom-deco
   (lambda (size)
-    (make-object mred:font% size 'decorative 'normal 'normal)))
+    (make-object gui:font% size 'decorative 'normal 'normal)))
 
 (define set-viewport-pen
   (lambda (viewport pen)
@@ -426,11 +426,11 @@
 (define green-brush (get-brush green))
 (define blue-brush (get-brush blue))
 
-(define invisi-pen (send mred:the-pen-list find-or-create-pen "WHITE" 0 'transparent))
-(define invisi-brush (send mred:the-brush-list find-or-create-brush "WHITE" 'transparent))
+(define invisi-pen (send gui:the-pen-list find-or-create-pen "WHITE" 0 'transparent))
+(define invisi-brush (send gui:the-brush-list find-or-create-brush "WHITE" 'transparent))
 
-(define xor-pen (send mred:the-pen-list find-or-create-pen "BLACK" 1 'xor))
-(define xor-brush (send mred:the-brush-list find-or-create-brush "BLACK" 'xor))
+(define xor-pen (send gui:the-pen-list find-or-create-pen "BLACK" 1 'xor))
+(define xor-brush (send gui:the-brush-list find-or-create-brush "BLACK" 'xor))
 
 (define draw-it (lambda (draw flip clear) (draw)))
 (define flip-it (lambda (draw flip clear) (flip)))
@@ -538,10 +538,10 @@
               (orp color? number?) color "color or index")
        (let ([dc (viewport-dc viewport)]
              [buffer-dc (viewport-buffer-dc viewport)])
-         (send dc set-pen (send mred:the-pen-list find-or-create-pen (get-color color) 1 'solid))
-         (send dc set-brush (send mred:the-brush-list find-or-create-brush "BLACK" 'transparent))
-         (send buffer-dc set-pen (send mred:the-pen-list find-or-create-pen (get-color color) 1 'solid))
-         (send buffer-dc set-brush (send mred:the-brush-list find-or-create-brush "BLACK" 'transparent))
+         (send dc set-pen (send gui:the-pen-list find-or-create-pen (get-color color) 1 'solid))
+         (send dc set-brush (send gui:the-brush-list find-or-create-brush "BLACK" 'transparent))
+         (send buffer-dc set-pen (send gui:the-pen-list find-or-create-pen (get-color color) 1 'solid))
+         (send buffer-dc set-brush (send gui:the-brush-list find-or-create-brush "BLACK" 'transparent))
          (send dc draw-arc (posn-x p) (posn-y p) width height start-radians end-radians)
          (send buffer-dc draw-arc (posn-x p) (posn-y p) width height start-radians end-radians))])))
 
@@ -561,10 +561,10 @@
               (orp color? number?) color "color or index")
        (let ([dc (viewport-dc viewport)]
              [buffer-dc (viewport-buffer-dc viewport)])
-         (send dc set-pen (send mred:the-pen-list find-or-create-pen (get-color color) 1 'solid))
-         (send dc set-brush (send mred:the-brush-list find-or-create-brush (get-color color) 'solid))
-         (send buffer-dc set-pen (send mred:the-pen-list find-or-create-pen (get-color color) 1 'solid))
-         (send buffer-dc set-brush (send mred:the-brush-list find-or-create-brush (get-color color) 'solid))
+         (send dc set-pen (send gui:the-pen-list find-or-create-pen (get-color color) 1 'solid))
+         (send dc set-brush (send gui:the-brush-list find-or-create-brush (get-color color) 'solid))
+         (send buffer-dc set-pen (send gui:the-pen-list find-or-create-pen (get-color color) 1 'solid))
+         (send buffer-dc set-brush (send gui:the-brush-list find-or-create-brush (get-color color) 'solid))
          (send dc draw-arc (posn-x p) (posn-y p) width height start-radians end-radians)
          (send buffer-dc draw-arc (posn-x p) (posn-y p) width height start-radians end-radians))])))
 
@@ -581,8 +581,8 @@
               (orp color? number?) color "color or index")
        (draw/clear/flip-rectangle
         (lambda (dc)
-          (send dc set-pen (send mred:the-pen-list find-or-create-pen (get-color color) 1 'solid))
-          (send dc set-brush (send mred:the-brush-list find-or-create-brush "BLACK" 'transparent)))
+          (send dc set-pen (send gui:the-pen-list find-or-create-pen (get-color color) 1 'solid))
+          (send dc set-brush (send gui:the-brush-list find-or-create-brush "BLACK" 'transparent)))
         viewport p width height)])))
 
 (define (draw-solid-rectangle viewport)
@@ -598,8 +598,8 @@
               (orp color? number?) color "color or index")
        (draw/clear/flip-rectangle
         (lambda (dc)
-          (send dc set-pen (send mred:the-pen-list find-or-create-pen (get-color color) 1 'solid))
-          (send dc set-brush (send mred:the-brush-list find-or-create-brush (get-color color) 'solid)))
+          (send dc set-pen (send gui:the-pen-list find-or-create-pen (get-color color) 1 'solid))
+          (send dc set-brush (send gui:the-brush-list find-or-create-brush (get-color color) 'solid)))
         viewport p width height)])))
 
 (define (flip-rectangle viewport)
@@ -615,8 +615,8 @@
               (orp color? number?) color "color or index")
        (draw/clear/flip-rectangle
         (lambda (dc)
-          (send dc set-pen (send mred:the-pen-list find-or-create-pen (get-color color) 1 'xor))
-          (send dc set-brush (send mred:the-brush-list find-or-create-brush "BLACK" 'transparent)))
+          (send dc set-pen (send gui:the-pen-list find-or-create-pen (get-color color) 1 'xor))
+          (send dc set-brush (send gui:the-brush-list find-or-create-brush "BLACK" 'transparent)))
         viewport p width height)])))
 
 (define (flip-solid-rectangle viewport)
@@ -632,8 +632,8 @@
               (orp color? number?) color "color or index")
        (draw/clear/flip-rectangle
         (lambda (dc)
-          (send dc set-pen (send mred:the-pen-list find-or-create-pen "BLACK" 1 'transparent))
-          (send dc set-brush (send mred:the-brush-list find-or-create-brush (get-color color) 'xor)))
+          (send dc set-pen (send gui:the-pen-list find-or-create-pen "BLACK" 1 'transparent))
+          (send dc set-brush (send gui:the-brush-list find-or-create-brush (get-color color) 'xor)))
         viewport p width height)])))
 
 (define (draw-ellipse viewport)
@@ -649,8 +649,8 @@
               (orp color? number?) color "color or index")
        (draw/clear/flip-ellipse
         (lambda (dc)
-          (send dc set-pen (send mred:the-pen-list find-or-create-pen (get-color color) 1 'solid))
-          (send dc set-brush (send mred:the-brush-list find-or-create-brush "BLACK" 'transparent)))
+          (send dc set-pen (send gui:the-pen-list find-or-create-pen (get-color color) 1 'solid))
+          (send dc set-brush (send gui:the-brush-list find-or-create-brush "BLACK" 'transparent)))
         viewport p width height)])))
 
 (define (draw-solid-ellipse viewport)
@@ -666,8 +666,8 @@
               (orp color? number?) color "color or index")
        (draw/clear/flip-ellipse
         (lambda (dc)
-          (send dc set-pen (send mred:the-pen-list find-or-create-pen (get-color color) 1 'solid))
-          (send dc set-brush (send mred:the-brush-list find-or-create-brush (get-color color) 'solid)))
+          (send dc set-pen (send gui:the-pen-list find-or-create-pen (get-color color) 1 'solid))
+          (send dc set-brush (send gui:the-brush-list find-or-create-brush (get-color color) 'solid)))
         viewport p width height)])))
 
 (define (flip-ellipse viewport)
@@ -683,8 +683,8 @@
               (orp color? number?) color "color or index")
        (draw/clear/flip-ellipse
         (lambda (dc)
-          (send dc set-pen (send mred:the-pen-list find-or-create-pen (get-color color) 1 'xor))
-          (send dc set-brush (send mred:the-brush-list find-or-create-brush "BLACK" 'transparent)))
+          (send dc set-pen (send gui:the-pen-list find-or-create-pen (get-color color) 1 'xor))
+          (send dc set-brush (send gui:the-brush-list find-or-create-brush "BLACK" 'transparent)))
         viewport p width height)])))
 
 (define (flip-solid-ellipse viewport)
@@ -700,8 +700,8 @@
               (orp color? number?) color "color or index")
        (draw/clear/flip-ellipse
         (lambda (dc)
-          (send dc set-pen (send mred:the-pen-list find-or-create-pen "BLACK" 1 'transparent))
-          (send dc set-brush (send mred:the-brush-list find-or-create-brush (get-color color) 'xor)))
+          (send dc set-pen (send gui:the-pen-list find-or-create-pen "BLACK" 1 'transparent))
+          (send dc set-brush (send gui:the-brush-list find-or-create-brush (get-color color) 'xor)))
         viewport p width height)])))
 
 (define (clear-rectangle viewport)
@@ -714,8 +714,8 @@
              number? height "number")
       (draw/clear/flip-rectangle
        (lambda (dc)
-         (send dc set-pen (send mred:the-pen-list find-or-create-pen "WHITE" 1 'solid))
-         (send dc set-brush (send mred:the-brush-list find-or-create-brush "BLACK" 'transparent)))
+         (send dc set-pen (send gui:the-pen-list find-or-create-pen "WHITE" 1 'solid))
+         (send dc set-brush (send gui:the-brush-list find-or-create-brush "BLACK" 'transparent)))
        viewport p width height))))
 
 (define (clear-solid-rectangle viewport)
@@ -728,8 +728,8 @@
              number? height "number")
       (draw/clear/flip-rectangle
        (lambda (dc)
-         (send dc set-pen (send mred:the-pen-list find-or-create-pen "WHITE" 1 'solid))
-         (send dc set-brush (send mred:the-brush-list find-or-create-brush "WHITE" 'solid)))
+         (send dc set-pen (send gui:the-pen-list find-or-create-pen "WHITE" 1 'solid))
+         (send dc set-brush (send gui:the-brush-list find-or-create-brush "WHITE" 'solid)))
        viewport p width height))))
 
 (define (clear-ellipse viewport)
@@ -742,8 +742,8 @@
              number? height "number")
       (draw/clear/flip-ellipse
        (lambda (dc)
-         (send dc set-pen (send mred:the-pen-list find-or-create-pen "WHITE" 1 'solid))
-         (send dc set-brush (send mred:the-brush-list find-or-create-brush "BLACK" 'transparent)))
+         (send dc set-pen (send gui:the-pen-list find-or-create-pen "WHITE" 1 'solid))
+         (send dc set-brush (send gui:the-brush-list find-or-create-brush "BLACK" 'transparent)))
        viewport p width height))))
 
 (define (clear-solid-ellipse viewport)
@@ -756,8 +756,8 @@
              number? height "number")
       (draw/clear/flip-ellipse
        (lambda (dc)
-         (send dc set-pen (send mred:the-pen-list find-or-create-pen "WHITE" 1 'solid))
-         (send dc set-brush (send mred:the-brush-list find-or-create-brush "WHITE" 'solid)))
+         (send dc set-pen (send gui:the-pen-list find-or-create-pen "WHITE" 1 'solid))
+         (send dc set-brush (send gui:the-brush-list find-or-create-brush "WHITE" 'solid)))
        viewport p width height))))
 
 (define make-do-pointlist
@@ -777,7 +777,7 @@
                        (f color
                           (lambda (flip clear)
                             (let* ([points (map (lambda (p)
-                                                  (make-object mred:point% (posn-x p) (posn-y p)))
+                                                  (make-object gui:point% (posn-x p) (posn-y p)))
                                                 posns)]
                                    [x (posn-x offset)]
                                    [y (posn-y offset)]
@@ -938,7 +938,7 @@
 (define get-color-pixel 
   (lambda (viewport)
     (lambda (posn)
-      (let ([c (make-object mred:color%)]
+      (let ([c (make-object gui:color%)]
             [x (posn-x posn)]
             [y (posn-y posn)])
         (unless (send (viewport-buffer-dc viewport) get-pixel x y c)
@@ -948,7 +948,7 @@
 (define get-pixel 
   (lambda (viewport)
     (lambda (posn)
-      (let ([c (make-object mred:color%)]
+      (let ([c (make-object gui:color%)]
             [x (posn-x posn)]
             [y (posn-y posn)])
         (unless (send (viewport-buffer-dc viewport) get-pixel x y c)
@@ -961,7 +961,7 @@
 
 (define (test-pixel viewport)
   (lambda (color)
-    (let ([c (make-object mred:color%)])
+    (let ([c (make-object gui:color%)])
       (send (viewport-buffer-dc viewport) try-color color c)
       c)))
 
@@ -970,7 +970,7 @@
     (check 'draw-pixmap-posn
            string? filename "filename"
            (lambda (x) (memq x '(gif xbm xpm bmp pict unknown unknown/mask gif/mask))) type "file type symbol")
-    (let* ([bitmap (make-object mred:bitmap% filename type)])
+    (let* ([bitmap (make-object gui:bitmap% filename type)])
       (lambda (viewport)
         (check 'draw-pixmap-posn
                viewport? viewport "viewport")
@@ -1032,7 +1032,7 @@
                                            (exn-message x)
                                            (format "~e" x))))
                               ((error-escape-handler)))])
-              (mred:make-eventspace))))
+              (gui:make-eventspace))))
     (letrec ([open-viewport
               (case-lambda
                 [(label point) 
@@ -1046,16 +1046,16 @@
                    [graphics-flag
                     (let*
                         ([frame
-                          (parameterize ([mred:current-eventspace sixlib-eventspace])
+                          (parameterize ([gui:current-eventspace sixlib-eventspace])
                             (make-object sixlib-frame%
                               label #f width height))]
-                         [panel (make-object mred:vertical-panel% frame)]
+                         [panel (make-object gui:vertical-panel% frame)]
                          [canvas (make-object sixlib-canvas% panel)]
                          [_ (begin
                               (send canvas min-height height)
                               (send canvas min-width width))]
                          [dc (send canvas get-dc)]
-                         [buffer-dc (make-object mred:bitmap-dc%)]
+                         [buffer-dc (make-object gui:bitmap-dc%)]
                          [viewport (make-viewport label canvas)]
                          [ml (event-receiver)]
                          [kl (event-receiver)])
@@ -1086,7 +1086,7 @@
 (define open-viewport (make-open-viewport 'open-viewport #t))
 (define open-pixmap (make-open-viewport 'open-pixmap #f))
 
-(define (default-display-is-color?) (mred:is-color-display?))
+(define (default-display-is-color?) (gui:is-color-display?))
 
 (define position-display
   (lambda (viewport counter)
@@ -1112,12 +1112,12 @@
           [orig-dc (viewport-buffer-dc viewport)])
       (let* ([h (send orig-bitmap get-height)]
              [w (send orig-bitmap get-width)]
-             [new-bitmap (make-object mred:bitmap% w h)]
-             [tmp-mem-dc (make-object mred:bitmap-dc%)])
+             [new-bitmap (make-object gui:bitmap% w h)]
+             [tmp-mem-dc (make-object gui:bitmap-dc%)])
         (send tmp-mem-dc set-bitmap new-bitmap)
         (send tmp-mem-dc draw-bitmap (send orig-dc get-bitmap) 0 0)
         (send tmp-mem-dc set-bitmap #f)
-        (let ([snip (make-object mred:image-snip%)])
+        (let ([snip (make-object gui:image-snip%)])
           (send snip set-bitmap new-bitmap)
           snip)))))
 

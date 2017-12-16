@@ -1,7 +1,8 @@
+#lang racket/base
+
 ;; This module defines all the logic necessary for working with lowered
 ;; equivalents at the syntactic level.  That is, it treats functions simply 
 ;; as syntactic identifiers.
-#lang racket/base
 
 (provide (except-out (all-defined-out)
                      module-identifier=?))

@@ -1,16 +1,16 @@
 #lang racket/base
-(require racket/struct-info
-         (for-syntax racket/base)
-         (for-template racket/base))
 
 (provide build-struct-names
          build-struct-generation
          build-struct-expand-info
-         struct-declaration-info?
-         extract-struct-info
-         
+         generate-delayed-struct-declaration
          generate-struct-declaration
-         generate-delayed-struct-declaration)
+         extract-struct-info
+         struct-declaration-info?)
+
+(require racket/struct-info
+         (for-syntax racket/base)
+         (for-template racket/base))
 
 ;; build-struct-names : id (list-of id) bool bool -> (list-of id)
 (define build-struct-names

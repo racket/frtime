@@ -1,14 +1,13 @@
 #lang racket/base
 
-(require racket/promise
-         (only-in frtime/frtime [provide frtime:provide]))
-
+(require (only-in frtime/frtime [provide frtime:provide]))
 (frtime:provide (lifted date->string
                         date-display-format
                         find-seconds
                         date->julian/scalinger
                         julian/scalinger->string))
 
+(require racket/promise)
 
 ;; Support for Julian calendar added by Shriram;
 ;; current version only works until 2099 CE Gregorian

@@ -1,4 +1,5 @@
 #lang frtime
+
 (require frtime/gui/simple)
 
 (current-widget-parent (new ft-frame% (width 400) (stretchable-width #t)))
@@ -10,7 +11,7 @@
                                   reset)
                            (value-now seconds))))]
   [gauge (mode widget ft-gauge% 
-               (label "Timer") 
+               (label "Timer")
                (value gauge-value) 
                (range 15)
                (stretchable-width #t))]

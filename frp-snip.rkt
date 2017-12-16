@@ -1,10 +1,13 @@
 #lang racket/base
-(require racket/class
+
+(provide (all-defined-out))
+
+(require framework
+         racket/class
          racket/list
          racket/port
-         framework
-         ;; FRP requires
          
+         ;; FRP requires
          frtime/core/frp
          (except-in frtime/lang-ext
                     undefined?)
@@ -12,7 +15,7 @@
                   any-nested-reactivity? raise-reactivity)
          
          ;; GRacket require
-         mred)
+         racket/gui/base)
 
 (define drs-eventspace #f)
 
@@ -201,5 +204,3 @@
     [(signal? beh)
      (make-object dynamic-snip% beh super-render-fun)]
     [else beh]))
-
-(provide (all-defined-out))

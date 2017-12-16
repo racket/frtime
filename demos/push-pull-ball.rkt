@@ -1,4 +1,5 @@
 #lang frtime
+
 (require frtime/animation)
 
 (define radius (new-cell 20))

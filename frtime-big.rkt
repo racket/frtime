@@ -1,12 +1,12 @@
-(module frtime-big frtime/frtime
+#lang s-exp frtime/frtime
+
+(provide (all-from-out frtime/frtime)
+         (all-from-out frtime/frlibs/date)
+         (all-from-out frtime/frlibs/etc)
+         (all-from-out frtime/frlibs/list)
+         (all-from-out frtime/frlibs/math))
   
-  (require frtime/frlibs/list
-           frtime/frlibs/etc
-           frtime/frlibs/math
-           frtime/frlibs/date)
-  
-  (provide (all-from-out frtime/frtime)
-           (all-from-out frtime/frlibs/list)
-           (all-from-out frtime/frlibs/etc)
-           (all-from-out frtime/frlibs/math)
-           (all-from-out frtime/frlibs/date)))
+(require frtime/frlibs/date
+         frtime/frlibs/etc
+         frtime/frlibs/list
+         frtime/frlibs/math)

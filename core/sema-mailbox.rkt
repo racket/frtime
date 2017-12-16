@@ -1,10 +1,18 @@
 #lang racket/base
 
+(require "contract.rkt")
+(provide (contract-out*
+          [mailbox? (any/c . -> . boolean?)]
+          [new-mailbox (-> mailbox?)]
+          [mailbox-send! (mailbox? any/c . -> . void)]
+          [mailbox-receive (mailbox? (or/c false/c number?)
+                                     (-> any)
+                                     (any/c . -> . (-> any)) . -> . (-> any))]))
+
 (require racket/list
          racket/bool
          racket/match
-         "match.rkt"
-         "contract.rkt")
+         "match.rkt")
 
 (define (call-with-semaphore s thunk)
     (semaphore-wait s)
@@ -82,9 +90,3 @@
        (set-mailbox-tail! mbox newtail)
        (semaphore-wait (mailbox-sem-space mbox))
        (semaphore-post (mailbox-sem-count mbox))))))
-
-(provide/contract*
- [mailbox? (any/c . -> . boolean?)]
- [new-mailbox (-> mailbox?)]
- [mailbox-send! (mailbox? any/c . -> . void)]
- [mailbox-receive (mailbox? (or/c false/c number?) (-> any) (any/c . -> . (-> any)) . -> . (-> any))])

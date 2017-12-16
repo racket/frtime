@@ -1,5 +1,57 @@
 #lang racket/base
 
+(provide (contract-out*
+          ; Event Sets
+          [make-events-now ((listof any/c) . -> . event-set?)] ; XXX Ugly contract
+          [event-set? (any/c . -> . boolean?)]
+          [event-set-time (event-set? . -> . number?)]
+          [event-set-events (event-set? . -> . (listof any/c))] ; XXX Ugly contract
+          ; Undefined
+          [undefined undefined?]
+          [undefined? (any/c . -> . boolean?)]
+          ; Signals
+          [proc->signal ((thunk/c) () #:rest producers/c . ->* . signal?)]
+          [signal? (any/c . -> . boolean?)]
+          [signal-value (signal? . -> . any/c)]
+          [set-signal-value! (signal? any/c . -> . void)]
+          [signal-depth (signal? . -> . exact-nonnegative-integer?)]
+          [set-signal-depth! (signal? exact-nonnegative-integer? . -> . void)]
+          [set-signal-producers! (signal? producers/c . -> . void)]
+          [signal-thunk (signal? . -> . thunk/c)]
+          [set-signal-thunk! (signal? thunk/c . -> . void)]
+          [signal-count (-> exact-nonnegative-integer?)]
+          ; Signal : Compound
+          [signal:compound? (any/c . -> . boolean?)]
+          [signal:compound-content (signal:compound? . -> . cons?)] ; XXX Ugly contract on codomain
+          ; Signal : Switching
+          [proc->signal:switching ((thunk/c switching-current/c switching-trigger/c) () #:rest producers/c . ->* . signal:switching?)]
+          [signal:switching? (any/c . -> . boolean?)]
+          [signal:switching-current (signal:switching? . -> . switching-current/c)]
+          [signal:switching-trigger (signal:switching? . -> . switching-trigger/c)]
+          ; Input queue
+          [iq-enqueue (any/c . -> . void)] ; XXX Not sure what any/c should be
+          [iq-resort (-> void)]
+          ; Events
+          [send-event (signal? any/c . -> . void)]
+          [send-synchronous-event (signal? any/c . -> . void)]
+          [send-synchronous-events ((listof (cons/c signal? (listof any/c))) . -> . void)]
+          [event-receiver (-> signal?)]
+          [event-producer2 ((thunk/c) () #:rest producers/c . ->* . signal?)]
+          ; Other
+          [register (signal? any/c . -> . void)] ; XXX Ugly contract
+          [unregister (signal? any/c . -> . void)] ; XXX Ugly contract
+          [current-logical-time (-> exact-nonnegative-integer?)]
+          [snap? (parameter/c boolean?)]
+          [super-lift ((any/c . -> . any/c) any/c . -> . any/c)] ; XXX Ugly contract
+          [behavior? (any/c . -> . boolean?)]
+          [value-now (any/c . -> . any/c)] ; XXX Should this return (not/c signal?) and why not take signal?
+          [value-now/sync (() () #:rest (listof any/c) . ->* . any)] ; XXX See above + not matching number of values returned with number of signals
+          [value-now/no-copy (any/c . -> . any/c)] ; XXX Should this return (not/c signal?) and why not take signal?
+          [safe-signal-depth (any/c . -> . exact-nonnegative-integer?)] ; XXX Ugly contract
+          [schedule-alarm (number? signal? . -> . void)]
+          [set-cell! (signal? any/c . -> . void)] ; XXX What is any/c?
+          [exceptions signal?]))
+
 (require racket/function
          racket/list
          racket/match
@@ -676,55 +728,3 @@
   (box/c any/c)) ; XXX
 (define switching-trigger/c
   any/c)
-
-(provide/contract*
- ; Event Sets
- [make-events-now ((listof any/c) . -> . event-set?)] ; XXX Ugly contract
- [event-set? (any/c . -> . boolean?)]
- [event-set-time (event-set? . -> . number?)]
- [event-set-events (event-set? . -> . (listof any/c))] ; XXX Ugly contract
- ; Undefined
- [undefined undefined?]
- [undefined? (any/c . -> . boolean?)]
- ; Signals
- [proc->signal ((thunk/c) () #:rest producers/c . ->* . signal?)]
- [signal? (any/c . -> . boolean?)]
- [signal-value (signal? . -> . any/c)]
- [set-signal-value! (signal? any/c . -> . void)]
- [signal-depth (signal? . -> . exact-nonnegative-integer?)]
- [set-signal-depth! (signal? exact-nonnegative-integer? . -> . void)]
- [set-signal-producers! (signal? producers/c . -> . void)]
- [signal-thunk (signal? . -> . thunk/c)]
- [set-signal-thunk! (signal? thunk/c . -> . void)]
- [signal-count (-> exact-nonnegative-integer?)]
- ; Signal : Compound
- [signal:compound? (any/c . -> . boolean?)]
- [signal:compound-content (signal:compound? . -> . cons?)] ; XXX Ugly contract on codomain
- ; Signal : Switching
- [proc->signal:switching ((thunk/c switching-current/c switching-trigger/c) () #:rest producers/c . ->* . signal:switching?)]
- [signal:switching? (any/c . -> . boolean?)]
- [signal:switching-current (signal:switching? . -> . switching-current/c)]
- [signal:switching-trigger (signal:switching? . -> . switching-trigger/c)]
- ; Input queue
- [iq-enqueue (any/c . -> . void)] ; XXX Not sure what any/c should be
- [iq-resort (-> void)]
- ; Events
- [send-event (signal? any/c . -> . void)]
- [send-synchronous-event (signal? any/c . -> . void)]
- [send-synchronous-events ((listof (cons/c signal? (listof any/c))) . -> . void)]
- [event-receiver (-> signal?)]
- [event-producer2 ((thunk/c) () #:rest producers/c . ->* . signal?)]
- ; Other
- [register (signal? any/c . -> . void)] ; XXX Ugly contract
- [unregister (signal? any/c . -> . void)] ; XXX Ugly contract
- [current-logical-time (-> exact-nonnegative-integer?)]
- [snap? (parameter/c boolean?)]
- [super-lift ((any/c . -> . any/c) any/c . -> . any/c)] ; XXX Ugly contract
- [behavior? (any/c . -> . boolean?)]
- [value-now (any/c . -> . any/c)] ; XXX Should this return (not/c signal?) and why not take signal?
- [value-now/sync (() () #:rest (listof any/c) . ->* . any)] ; XXX See above + not matching number of values returned with number of signals
- [value-now/no-copy (any/c . -> . any/c)] ; XXX Should this return (not/c signal?) and why not take signal?
- [safe-signal-depth (any/c . -> . exact-nonnegative-integer?)] ; XXX Ugly contract
- [schedule-alarm (number? signal? . -> . void)]
- [set-cell! (signal? any/c . -> . void)] ; XXX What is any/c?
- [exceptions signal?])

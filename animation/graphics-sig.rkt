@@ -1,8 +1,10 @@
 #lang racket/base
 
-(require racket/unit)
+(provide graphics^
+         graphics:posn-less^
+         graphics:posn^)
 
-(provide graphics^ graphics:posn-less^ graphics:posn^)
+(require racket/unit)
 
 (define-signature graphics:posn^
   (make-posn posn? posn-x posn-y set-posn-x! set-posn-y!))

@@ -1,14 +1,15 @@
 #lang racket/base
+
+(provide tool@)
+
 (require racket/unit
          racket/class
          racket/bool
-         mred
+         racket/gui/base
          (only-in racket/function identity)
          racket/list
          drracket/tool
          string-constants)
-
-(provide tool@)
 
 (define tool@
   (unit 

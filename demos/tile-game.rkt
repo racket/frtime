@@ -1,5 +1,6 @@
-;; tile game by Dave Tucker
 #lang frtime
+;; tile game by Dave Tucker
+
 (require frtime/animation
          frtime/gui
          racket/class)

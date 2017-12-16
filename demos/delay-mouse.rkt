@@ -1,4 +1,5 @@
 #lang frtime
+
 (require frtime/animation)
 
 ; the mouse position delayed

@@ -1,7 +1,20 @@
 #lang racket/base
 
-(require racket/match
-         "contract.rkt")
+(require "contract.rkt")
+(provide (contract-out*
+          [dv? (any/c . -> . boolean?)]
+          [dv:make (exact-nonnegative-integer? . -> . dv?)]
+          [dv:length (dv? . -> . exact-nonnegative-integer?)]
+          [dv:remove-last (non-empty-dv? . -> . void)]
+          [dv:ref (->d ([dv dv?] [pos exact-nonnegative-integer?]) () 
+                       #:pre-cond (pos . < . (dv:length dv))
+                       [r any/c])]
+          [dv:set! (->d ([dv dv?] [pos exact-nonnegative-integer?] [val any/c]) () 
+                        #:pre-cond (pos . < . (dv:length dv))
+                        [r void])]
+          [dv:append (dv? any/c . -> . void)]))
+
+(require racket/match)
 
 (define-struct dv (vec-length next-avail-pos vec) #:mutable)
 
@@ -45,16 +58,3 @@
 
 (define (non-empty-dv? dv)
   ((dv:length dv) . > . 0))
-
-(provide/contract*
- [dv? (any/c . -> . boolean?)]
- [dv:make (exact-nonnegative-integer? . -> . dv?)]
- [dv:length (dv? . -> . exact-nonnegative-integer?)]
- [dv:remove-last (non-empty-dv? . -> . void)]
- [dv:ref (->d ([dv dv?] [pos exact-nonnegative-integer?]) () 
-              #:pre-cond (pos . < . (dv:length dv))
-              [r any/c])]
- [dv:set! (->d ([dv dv?] [pos exact-nonnegative-integer?] [val any/c]) () 
-               #:pre-cond (pos . < . (dv:length dv))
-               [r void])]
- [dv:append (dv? any/c . -> . void)])
