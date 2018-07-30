@@ -27,6 +27,20 @@ Within DrRacket, as an alternative to using @racket[@#,hash-lang[]
 @#,racketmodname[frtime]], you can choose @onscreen{FrTime} from the
 @onscreen{Choose Language} menu.
 
+This reference document describes the functionality provided by the
+language@";" for details of the design and semantic model, consult the
+accompanying research papers:
+
+@itemlist[
+
+@item{Brown 2008 - Cooper. @link["http://cs.brown.edu/people/ghcooper/thesis.pdf"]{Integrating dataflow evaluation into a practical higher-order call-by-value language}}
+
+@item{ESOP 2006 — Cooper and Krishnamurthi. @link["http://www.cs.brown.edu/people/sk/Publications/Papers/Published/ck-frtime/"]{Embedding Dynamic Dataflow in a Call-by-Value Language}}
+
+@item{Brown 2004 - Cooper and Krishnamurthi. @link["http://cs.brown.edu/research/pubs/techreports/reports/CS-03-20.html"]{FrTime: Functional Reactive Programming in PLT Scheme}}
+
+]
+
 @section{Primitives}
 
 @defthing[undefined any/c]{stands for an undefined value.}
