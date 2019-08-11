@@ -130,13 +130,6 @@
                      [(3) 200]
                      [(4) 1000]))))
 
-;; Determines the next game state following a move indicated by `direction`.
-;; direction: 'left | 'right | 'rotate | 'down | 'drop | 'reset
-;; h-pos: current column where `shape` starts
-;; v-pos: current row where `shape` starts
-;; new-shape: the shape that will drop once the current shape is placed
-;; scope: the current score
-;; Returns: a list containing a new (grid shape h-pos v-pos new-shape score)
 (define (add-shape grid shape h-pos v-pos)
   (map (lambda (row row-num)
          (map (lambda (cell col-num)
@@ -148,6 +141,13 @@
               row (build-list (length row) identity)))
        grid (build-list (length grid) identity)))
 
+;; Determines the next game state following a move indicated by `direction`.
+;; direction: 'left | 'right | 'rotate | 'down | 'drop | 'reset
+;; h-pos: current column where `shape` starts
+;; v-pos: current row where `shape` starts
+;; new-shape: the shape that will drop once the current shape is placed
+;; scope: the current score
+;; Returns: a list containing a new (grid shape h-pos v-pos new-shape score)
 (define (move direction grid shape h-pos v-pos new-shape score)
   (case direction
     ;; User moves shape left or right, or rotates it 90 degrees.
