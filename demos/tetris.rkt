@@ -20,9 +20,12 @@
 (do-in-manager
  (dc-for-text-size (new bitmap-dc% [bitmap (make-object bitmap% 64 64)])))
 
+;; The size of the cells that make up the board can be changed by calling
+;; (set-cell! size N), for positive N.
 (define size (new-cell 20))
 (define row-width 12)
 
+;; Flush pending work to ensure that `size` has its value before proceeding.
 (do-in-manager-after '())
 
 (define list-ref*
@@ -30,6 +33,8 @@
     [(lst idx) (list-ref lst idx)]
     [(lst idx . is) (apply list-ref* (list-ref lst idx) is)]))
 
+;; Rotates a matrix, represented as a list of lists, counterclockwise 90
+;; degrees.
 (define (rotate matrix)
   (let ([rows (length matrix)]
         [columns (length (first matrix))])
@@ -38,6 +43,9 @@
      (lambda (i)
        (build-list rows (lambda (j) (list-ref* matrix j (- columns i 1))))))))
 
+;; The shapes used in the game are represented as matrices (lists of lists) of
+;; (color OR false), where a color indicates an occupied space, false an empty
+;; space.
 (define shapes
   (map (lambda (desc)
          (map (lambda (row)
@@ -65,21 +73,32 @@
           (1 1)
           (1 1)))))
 
+;; The image of a single block: a black border around a colored square.
 (define 1x1 (cc-superimpose (colorize (rectangle size size) "black")
                             (filled-rectangle (- size 2) (- size 2))))
 
+;; make-cell: (color OR false) -> shape
+;; Returns a block that's colored with `c` (invisible if `c` is false).
 (define (make-cell c)
   (if c (colorize 1x1 c) (blank size)))
 
+;; make-row: (list (color OR false)) -> shape
+;; Returns an image of a row of blocks colored per the elements of `lst` (see make-cell).
 (define (make-row lst)
   (apply hb-append (map make-cell lst)))
 
+;; make-shape: (list (list (color OR false))) -> shape
+;; Returns an image of a 2-d array of blocks colored per the elements of `lol` (see make-row).
 (define (make-shape lol)
   (apply vl-append (map make-row lol)))
 
 (define frame (new ft-frame% [label "Tetris"] [shown #t]
                    [min-width (* size 20)] [min-height (* size 20)]))
 
+;; intersects: (list (list any)) (list (list any)) int int -> boolean
+;; Returns whether `shape`, having been translated by `h-pos` and `v-pos`,
+;; overlaps with any squares in `grid`, where false is used to represent an
+;; empty square in the grid and the shape.
 (define (intersects grid shape h-pos v-pos)
   (ormap (lambda (shape-row cell-v)
            (ormap (lambda (shape-cell cell-h)
@@ -96,9 +115,12 @@
 (define bottom-row
   (append (build-list row-width (lambda (_) "black")) (list #f)))
 
+;; Returns a grid with enough empty rows prepended to make it `n-rows` tall.
 (define (replenish-rows grid)
   (append (build-list (- n-rows (length grid)) (lambda (_) empty-row)) grid))
 
+;; remove-completed-rows: (list (list T)) -> (values (list (list T)) int)
+;; Returns `grid` with any full rows removed.
 (define (remove-completed-rows grid)
   (let ([new-grid (filter (lambda (row) (not (andmap identity row))) grid)])
     (list new-grid (case (- (length grid) (length new-grid))
@@ -108,6 +130,13 @@
                      [(3) 200]
                      [(4) 1000]))))
 
+;; Determines the next game state following a move indicated by `direction`.
+;; direction: 'left | 'right | 'rotate | 'down | 'drop | 'reset
+;; h-pos: current column where `shape` starts
+;; v-pos: current row where `shape` starts
+;; new-shape: the shape that will drop once the current shape is placed
+;; scope: the current score
+;; Returns: a list containing a new (grid shape h-pos v-pos new-shape score)
 (define (add-shape grid shape h-pos v-pos)
   (map (lambda (row row-num)
          (map (lambda (cell col-num)
@@ -121,6 +150,7 @@
 
 (define (move direction grid shape h-pos v-pos new-shape score)
   (case direction
+    ;; User moves shape left or right, or rotates it 90 degrees.
     [(left right rotate)
      (let ([new-h ((case direction
                      [(left) sub1]
@@ -131,6 +161,7 @@
              (if (intersects grid rshape new-h v-pos)
                  (list shape h-pos v-pos new-shape score)
                  (list rshape new-h v-pos new-shape score))))]
+    ;; Shape falls one cell down.
     [(down)
      (if (intersects grid shape h-pos (add1 v-pos))
          (let ([new-grid/points (remove-completed-rows
@@ -138,10 +169,12 @@
            (list (replenish-rows (first new-grid/points))
                  new-shape 5 0 (list-ref shapes (random (length shapes))) (+ (second new-grid/points) score)))
          (list grid shape h-pos (add1 v-pos) new-shape score))]
+    ;; Shape drops all the way down at user request.
     [(drop) (let ([new-state (move 'down grid shape h-pos v-pos new-shape score)])
               (if (not (eq? (first new-state) grid))
                   (list grid shape h-pos v-pos new-shape score)
                   (move 'drop grid shape h-pos (add1 v-pos) new-shape score)))]
+    ;; User requests to start game over.
     [(reset) (list init-grid new-shape 5 0 (list-ref shapes (random (length shapes))) 0)]))
 
 (define init-grid
@@ -188,3 +221,7 @@
                    (blank size)
                    (text (format "Score: ~a" score))))])
     (values canvas state rate)))
+
+;; Send focus to the canvas so that keystrokes are heard without the need for an
+;; explicit click.
+(send canvas focus)
