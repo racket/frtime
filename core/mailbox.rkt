@@ -53,7 +53,7 @@
                         (not-on-receive (snoc new-msg msgs))))
           (handle-evt control-ch
                       (lambda (req)
-                        (with-handlers ([exn? (lambda (x) (waiting-for-matching (current-inexact-milliseconds) req msgs))])
+                        (with-handlers* ([exn? (lambda (x) (waiting-for-matching (current-inexact-milliseconds) req msgs))])
                           (define new-msgs (try-to-match* req msgs))
                           ; One worked
                           (not-on-receive new-msgs))))))

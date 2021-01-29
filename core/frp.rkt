@@ -590,7 +590,7 @@
    'frtime-heart
    (let* ([named-providers (make-hash)] 
           [cur-beh #f]
-          [signal-cache (make-weak-hash)]
+          [signal-cache (make-weak-hasheq)]
           [last-known-signal-count 50]
           [notifications empty]
           
@@ -606,7 +606,7 @@
                                   (cons (list* pid 'vals (call-with-values thnk list))
                                         notifications))))])
      (let outer ()
-       (with-handlers ([exn:fail?
+       (with-handlers* ([exn:fail?
                         (lambda (exn)
                           (when cur-beh
                             (set! exn (make-exn:fail
