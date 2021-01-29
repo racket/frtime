@@ -41,6 +41,16 @@
 
 (define sixlib-canvas%
   (class gui:canvas%
+    ;; were public
+    (define viewport (void))
+    (define height 0)
+    (define width 0)
+    (define label 0)
+    (define current-pen 'uninitialized-pen)
+    (define current-brush 'uninitialized-brush)
+    (define bitmap 'uninitalized-bitmap)
+    (define dc 'uninitialized-dc)
+    (define buffer-dc 'uninitialized-buffer-dc)
     (super-new)
     (inherit get-parent
              min-client-width min-client-height
@@ -68,16 +78,7 @@
         (send buffer-dc clear)
         (send dc clear))])
     
-    ;; were public
-    (define viewport (void))
-    (define height 0)
-    (define width 0)
-    (define label 0)
-    (define current-pen 'uninitialized-pen)
-    (define current-brush 'uninitialized-brush)
-    (define bitmap 'uninitalized-bitmap)
-    (define dc 'uninitialized-dc)
-    (define buffer-dc 'uninitialized-buffer-dc)
+
     
     (public*
      [get-mouse-listener (lambda () mouse-listener)]
@@ -100,8 +101,10 @@
     (override*
      [on-paint
       (lambda ()
-        (let ([bm (send buffer-dc get-bitmap)])
-          (send dc draw-bitmap bm 0 0)))]
+        (when (object? buffer-dc)
+            (define bm (send buffer-dc get-bitmap))
+            (when bm
+              (send dc draw-bitmap bm 0 0))))]
      
      [on-event 
       (lambda (mouse-event)
@@ -1030,7 +1033,8 @@
                                (format "internal error in graphics library: ~a"
                                        (if (exn? x)
                                            (exn-message x)
-                                           (format "~e" x))))
+                                           (format "~e" x)))
+                               x)
                               ((error-escape-handler)))])
               (gui:make-eventspace))))
     (letrec ([open-viewport
