@@ -18,7 +18,8 @@
 (define build-deps '("draw-doc"
                      "gui-doc"
                      "racket-doc"
-                     "scribble-lib"))
+                     "scribble-lib"
+                     "rackunit"))
 
 (define pkg-desc "The implementation of the FrTime language")
 

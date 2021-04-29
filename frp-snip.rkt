@@ -1,6 +1,7 @@
 #lang racket/base
-
+(require racket/match)
 (provide (all-defined-out))
+(module+ test (require rackunit))
 
 (require framework
          racket/class
@@ -72,94 +73,132 @@
     
     (super-instantiate (" "))))
 
-(define dynamic-snip-copy%
-  (class editor-snip%
-    (init-field initial-content parent)
-    (inherit get-editor set-editor)
-    
-    (define/public (update content)
-      (parameterize ([current-eventspace drs-eventspace])
-        (queue-callback
-         (lambda ()
-           ;; TODO(ghcooper): Figure out why this doesn't work properly for non-
-           ;; textual content. (Image snips don't seem to be deleted from the
-           ;; editor.) It doesn't even work if we create a completely new
-           ;; racket:text% each time, which suggests it's a bug in the snip
-           ;; rather than the editor itself.
-           (let ([editor (get-editor)])
-             (send editor lock #f)
-             (send editor delete 0 (send editor last-position))
-             (for-each (lambda (thing)
-                         (send editor insert thing
-                               (send editor last-position)
-                               (send editor last-position)))
-                       content)
-             (send editor lock #t))))))
-    
-    (super-new
-     [editor (new racket:text%)]
-     [with-border? #f]
-     [left-margin 0]
-     [right-margin 0]
-     [top-margin 0]
-     [bottom-margin 0])
-    (update initial-content)))
-
 ;; Class of objects to be given to DrRacket for rendering a signal in the
 ;; interactions window. However, DrRacket won't actually embed this snip
-;; directly into the interactions window; instead it makes a copy, and then a
-;; copy of the copy, and the second copy is what's really rendered. This makes
-;; life challenging for us, because what we want (I believe) is ultimately an
-;; editor-snip% whose contents we can rewrite whenever the signal changes.
-;; We can't make this class inherit from editor-snip%, though, because we need
-;; custom copy behavior, and editor-snip%'s copy method is final. Instead, this
-;; class is designed NOT to be rendered, but just to be copied, to keep track of
-;; the copy that's actually displayed, and to make sure the copy gets updated
-;; when the signal changes. The displayed "copy" is not, in fact, a copy at all
-;; but an instance of the dynamic-snip-copy% class defined above.
-;;
-;; TODO(ghcooper): This code is very brittle; it breaks whenever DrRacket
-;; changes the length of the chain of copies it makes. A better approach might
-;; be to have a single class that HAS an editor-snip% (instead of inheriting
-;; from editor-snip%), delegates all relevant calls to the editor-snip%, and has
-;; a copy method that makes a proper copy of itself and (like this class) keeps
-;; track of copies so it can notify them when they need to be redrawn.
+;; directly into the interactions window; instead it makes some number of copies,
+;; and one of the copies is what's really inserted into the editor. So
+;; we keep references to the copies and propagate changes to them when
+;; this copy learns about them.
 (define dynamic-snip%
   (class snip%
+    (inherit get-admin get-style)
+    (define super-new-returned? #f)
+
+
     (init-field
      ;; The behavior we want to render dynamically.
      bhvr
      ;; Procedure that generates a rendering of the current value of bhvr.
-     super-render-fun
-     ;; Number of times the copy method will just return this object. Ick!
-     [ignore-copy-count 1])
-    
-    (field [copies empty]  ; "Copies" of this snip that we need to update.
-           [current (get-rendering (value-now bhvr) super-render-fun)]
-           [loc-bhvr (proc->signal (lambda () (update)) bhvr)])
-    
+     super-render-fun)
+
+    ;; width, height : (or/c #f nonnegative-real?)
+    ;; when #f, the size information cached inside `current` is wrong
+    (define width #f)
+    (define height #f)
+
+    (define copies empty)  ; "Copies" of this snip that we need to update.
+    (define current (get-rendering (value-now bhvr) super-render-fun))
+    (define loc-bhvr (proc->signal (lambda () (update)) bhvr))
+
     (define/override (copy)
-      (if (> ignore-copy-count 0)
-          (begin
-            (set! ignore-copy-count (sub1 ignore-copy-count))
-            this)
-          (let ([ret (make-object dynamic-snip-copy% current this)])
-            (set! copies (cons ret copies))
-            ret)))
+      (define ret (make-object dynamic-snip% bhvr super-render-fun))
+      (set! copies (cons ret copies))
+      ret)
     
     (define/public (update)
-      (set! current (get-rendering (value-now bhvr) super-render-fun))
-      (for-each (lambda (copy) (send copy update current)) copies))
+      (define new-current (get-rendering (value-now bhvr) super-render-fun))
+      (parameterize ([current-eventspace drs-eventspace])
+        (queue-callback
+         (λ ()
+           (update-current new-current)))))
+
+    (define/public (update-current new-current)
+      (set! current new-current)
+      (request-refresh)
+      (for-each (lambda (copy) (send copy update-current current)) copies))
+
+    (define/private (request-refresh)
+      (set! width #f)
+      (set! height #f)
+      (when super-new-returned?
+        (define admin (get-admin))
+        (when admin
+          (send admin resized this #t))))
     
     (define/override (size-cache-invalid)
+      (set! width #f)
+      (set! height #f)
       (for-each
        (lambda (s) (send s size-cache-invalid))
        copies))
-    
-    (define/override (get-extent dc x y w h descent space lspace rspace)
-      (send current get-extent dc x y w h descent space lspace rspace))
-    
-    (super-new)))
+
+    (define/override (draw dc x y left top right bottom dx dy draw-caret)
+      (unless (and width height) (recalculate-size-information dc))
+      (for ([line (in-list current)])
+        (match-define (vector y-baseline-offset info+words) line)
+        (for ([info+word (in-list info+words)])
+          (match-define (vector x-offset height-above-baseline word) info+word)
+          (define draw-x (+ x x-offset))
+          (define draw-y (+ y y-baseline-offset (- height-above-baseline)))
+          (cond
+            [(string? word)
+             (send dc draw-text word draw-x draw-y)]
+            [else
+             (send word draw dc draw-x draw-y
+                   left top right bottom
+                   0 0  ;; these are wrong but maybe not needed by most snips
+                   #f)]))))
+
+    (define/override (get-extent dc x y wb hb descent space lspace rspace)
+      (unless (and width height) (recalculate-size-information dc))
+      (define (set-box/f b v) (when (box? b) (set-box! b v)))
+      (set-box/f wb width)
+      (set-box/f hb height)
+      (set-box/f descent 0)
+      (set-box/f space 0)
+      (set-box/f lspace 0)
+      (set-box/f rspace 0))
+
+    (define/private (recalculate-size-information dc)
+      (define font (send (get-style) get-font))
+      (define wb (box 0))
+      (define hb (box 0))
+      (define db (box 0))
+      (define-values (total-width total-height)
+        (for/fold ([total-width 0]
+                   [total-height 0])
+                  ([line (in-list current)])
+          (define-values (x-offset line-height-above-baseline line-descent)
+            (for/fold ([x-offset 0]
+                       [line-height-above-baseline 0]
+                       [line-descent 0])
+                      ([x-off+hab+word (in-list (vector-ref line 1))])
+              (define word (vector-ref x-off+hab+word 2))
+              (define-values (this-w this-h this-d)
+                (cond
+                  [(string? word)
+                   (define-values (lw lh ld _) (send dc get-text-extent word font))
+                   (values lw lh ld)]
+                  [else
+                   (send word set-style (get-style))
+                   ;; we pass 0 as x and y here which means that a snip whose size depends
+                   ;; on its position will always have the size it would have at (0,0)
+                   (send word get-extent dc 0 0 wb hb db #f #f #f)
+                   (values (unbox wb) (unbox hb) (unbox db))]))
+              (define this-height-above-baseline (- this-h this-d))
+              (vector-set! x-off+hab+word 0 x-offset)
+              (vector-set! x-off+hab+word 1 this-height-above-baseline)
+              (values (+ x-offset this-w)
+                      (max this-height-above-baseline line-height-above-baseline)
+                      (max this-d line-descent))))
+          (vector-set! line 0 (+ total-height line-height-above-baseline))
+          (values (max x-offset total-width)
+                  (+ total-height line-height-above-baseline line-descent))))
+      (set! width total-width)
+      (set! height total-height))
+
+    (super-new)
+    (set! super-new-returned? #t)))
 
 (define (render beh as-snip?)
   (cond
@@ -178,17 +217,78 @@
       ; easy case
       (super-render-fun val)))
 
-;; get-rendering : any (any port -> void) -> (listof (string U snip%))
-;; Applies super-render-fun to val and a port. Returns the sequence of values
-;; written to the port.
+;; get-rendering : any (any port -> void) ->
+;; (listof (vector y-baseline-offset (listof (vector x-offset height-above-baseline (string U snip%)))))
+;; Applies super-render-fun to val and a port. Returns information about
+;; what to print; the outer list are lines and the inner lists are the content
+;; of the lines in order; the vectors to record spacing information (which is computed elsewhere)
 (define (get-rendering val super-render-fun)
-  (let-values ([(in out) (make-pipe-with-specials)])
-    (thread (lambda () (super-render-fun val out) (close-output-port out)))
-    (let loop ([chars empty])
-      (let ([c (read-char-or-special in)])
-        (if (eof-object? c)
-            (reverse (rest chars))
-            (loop (cons c chars)))))))
+  (define-values (in out) (make-pipe-with-specials))
+  (thread (λ () (super-render-fun val out) (close-output-port out)))
+  (let loop ([lines '()])
+    (define line (read-a-line in))
+    (if (eof-object? line)
+        (map (λ (x) (vector 0 x)) (reverse lines))
+        (loop (cons (map (λ (x) (vector 0 0 x)) line) lines)))))
+
+(define (read-a-line in)
+  (define pending-word '())
+  (define pending-line '())
+  (define (finish-word)
+    (unless (null? pending-word)
+      (set! pending-line (cons (apply string (reverse pending-word))
+                               pending-line))
+      (set! pending-word '())))
+  (let loop ()
+    (define c (read-char-or-special in))
+    (cond
+      [(eof-object? c)
+       (finish-word)
+       (cond
+         [(null? pending-line) c]
+         [else (reverse pending-line)])]
+      [(equal? c #\newline)
+       (finish-word)
+       (reverse pending-line)]
+      [(char? c)
+       (set! pending-word (cons c pending-word))
+       (loop)]
+      [(is-a? c snip%)
+       (finish-word)
+       (set! pending-line (cons c pending-line))
+       (loop)]
+      [else
+       (finish-word)
+       (set! pending-line (cons (format "~s" c) pending-line))
+       (loop)])))
+
+(module+ test
+  (check-equal? (read-a-line (open-input-string "")) eof)
+  (check-equal? (read-a-line (open-input-string "a")) '("a"))
+  (check-equal? (read-a-line (open-input-string "ab")) '("ab"))
+  (check-equal? (read-a-line (open-input-string "ab\nc")) '("ab"))
+  (let ()
+    (define-values (in out) (make-pipe-with-specials))
+    (define s (new snip%))
+    (write-special s out)
+    (close-output-port out)
+    (check-equal? (read-a-line in) (list s)))
+  (let ()
+    (define-values (in out) (make-pipe-with-specials))
+    (define s (new snip%))
+    (display "ab" out)
+    (write-special s out)
+    (display "cd" out)
+    (close-output-port out)
+    (check-equal? (read-a-line in) (list "ab" s "cd")))
+  (let ()
+    (define-values (in out) (make-pipe-with-specials))
+    (define s (new snip%))
+    (display "ab" out)
+    (write-special s out)
+    (display "cd\nef" out)
+    (close-output-port out)
+    (check-equal? (read-a-line in) (list "ab" s "cd"))))
 
 (define (watch beh super-render-fun)
   (cond
