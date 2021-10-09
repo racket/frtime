@@ -24,3 +24,6 @@
 (define pkg-desc "The implementation of the FrTime language")
 
 (define pkg-authors '(jay gcooper))
+
+(define license
+  '(Apache-2.0 OR MIT))
